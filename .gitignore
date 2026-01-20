@@ -1,0 +1,37 @@
+# Laravel
+api-laravel/vendor/
+api-laravel/node_modules/
+api-laravel/.env
+api-laravel/storage/*.key
+api-laravel/storage/app/*
+api-laravel/storage/framework/cache/*
+api-laravel/storage/framework/sessions/*
+api-laravel/storage/framework/views/*
+api-laravel/storage/logs/*
+api-laravel/bootstrap/cache/*
+
+# Mobile Ionic
+mobile-ionic/node_modules/
+mobile-ionic/dist/
+mobile-ionic/.env
+mobile-ionic/android/
+mobile-ionic/ios/
+mobile-ionic/.capacitor/
+
+# Docker
+postgres_data/
+tile_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase
+firebase-credentials.json

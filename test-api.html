@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Lalana</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test API Lalana</h1>
+    
+    <div class="section">
+        <h2>1. Connexion</h2>
+        <input type="email" id="email" placeholder="Email" value="manager@lalana.mg">
+        <input type="password" id="password" placeholder="Password" value="manager123">
+        <button onclick="login()">Se connecter</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Profil utilisateur</h2>
+        <button onclick="getUser()">Voir mon profil</button>
+        <div id="userResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Liste des signalements</h2>
+        <button onclick="getSignalements()">Voir tous les signalements</button>
+        <div id="signalementsResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Créer un signalement</h2>
+        <input type="text" id="lat" placeholder="Latitude" value="-18.8792">
+        <input type="text" id="lng" placeholder="Longitude" value="47.5079">
+        <input type="text" id="desc" placeholder="Description" value="Route endommagée">
+        <button onclick="createSignalement()">Créer</button>
+        <div id="createResult"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    document.getElementById('loginResult').innerHTML = 
+                        `<p class="success">✓ Connecté en tant que: ${data.user.name} (${data.user.role})</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    document.getElementById('loginResult').innerHTML = 
+                        `<p class="error">✗ Erreur: ${data.message || 'Connexion échouée'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<p class="error">✗ Erreur: ${error.message}</p>`;
+            }
+        }
+
+        async function getUser() {
+            if (!token) {
+                document.getElementById('userResult').innerHTML = 
+                    '<p class="error">✗ Veuillez vous connecter d\'abord</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/user`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('userResult').innerHTML = 
+                        `<p class="success">✓ Profil récupéré</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    document.getElementById('userResult').innerHTML = 
+                        `<p class="error">✗ Erreur: ${data.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('userResult').innerHTML = 
+                    `<p class="error">✗ Erreur: ${error.message}</p>`;
+            }
+        }
+
+        async function getSignalements() {
+            try {
+                const response = await fetch(`${API_URL}/signalements`, {
+                    headers: token ? { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    } : {}
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('signalementsResult').innerHTML = 
+                        `<p class="success">✓ ${data.length} signalement(s) trouvé(s)</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    document.getElementById('signalementsResult').innerHTML = 
+                        `<p class="error">✗ Erreur: ${data.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('signalementsResult').innerHTML = 
+                    `<p class="error">✗ Erreur: ${error.message}</p>`;
+            }
+        }
+
+        async function createSignalement() {
+            if (!token) {
+                document.getElementById('createResult').innerHTML = 
+                    '<p class="error">✗ Veuillez vous connecter d\'abord</p>';
+                return;
+            }
+
+            const latitude = document.getElementById('lat').value;
+            const longitude = document.getElementById('lng').value;
+            const description = document.getElementById('desc').value;
+
+            try {
+                const response = await fetch(`${API_URL}/signalements`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ latitude, longitude, description })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('createResult').innerHTML = 
+                        `<p class="success">✓ Signalement créé avec succès!</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    document.getElementById('createResult').innerHTML = 
+                        `<p class="error">✗ Erreur: ${data.message || JSON.stringify(data.errors)}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('createResult').innerHTML = 
+                    `<p class="error">✗ Erreur: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-load user if token exists
+        if (token) {
+            document.getElementById('loginResult').innerHTML = 
+                '<p class="success">✓ Token trouvé dans le localStorage</p>';
+        }
+    </script>
+</body>
+</html>

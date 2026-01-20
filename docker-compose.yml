@@ -1,0 +1,75 @@
+services:
+  # PHP-FPM Application
+  app:
+    build:
+      context: ./api-laravel
+      dockerfile: Dockerfile
+    container_name: lalana_app
+    volumes:
+      - ./api-laravel:/var/www/html
+      - vendor:/var/www/html/vendor
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: lalana_db
+      DB_USERNAME: lalana_user
+      DB_PASSWORD: lalana_password
+    depends_on:
+      - postgres
+    networks:
+      - lalana_network
+
+  # Nginx Web Server
+  web:
+    image: nginx:1.25
+    container_name: lalana_nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./api-laravel:/var/www/html
+      - vendor:/var/www/html/vendor
+      - ./api-laravel/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - lalana_network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lalana_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lalana_db
+      POSTGRES_USER: lalana_user
+      POSTGRES_PASSWORD: lalana_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lalana_network
+
+  # Tile Server for Offline Maps
+  tile_server:
+    image: overv/openstreetmap-tile-server
+    container_name: lalana_tile_server
+    ports:
+      - "8080:80"
+    volumes:
+      - tile_data:/data/database
+    environment:
+      DOWNLOAD_PBF: "https://download.geofabrik.de/africa/madagascar-latest.osm.pbf"
+      DOWNLOAD_POLY: "https://download.geofabrik.de/africa/madagascar.poly"
+    networks:
+      - lalana_network
+
+volumes:
+  postgres_data:
+  tile_data:
+  vendor:
+
+networks:
+  lalana_network:
+    driver: bridge
