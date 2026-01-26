@@ -116,13 +116,25 @@ const tempIcon = L.divIcon({
 const initMap = async () => {
   if (!mapContainer.value) return;
 
-  // Obtenir la position de l'utilisateur
+  console.log('Initializing map...');
+  
+  // Obtenir la position de l'utilisateur (demande la permission automatiquement)
   const userCoords = await getCurrentPosition();
+  console.log('User coordinates:', userCoords);
+
+  // Vérifier si on a la vraie position ou la position par défaut
+  const isDefaultPosition = 
+    userCoords.latitude === DEFAULT_COORDS.latitude && 
+    userCoords.longitude === DEFAULT_COORDS.longitude;
+  
+  if (isDefaultPosition) {
+    console.warn('Using default position (Antananarivo center)');
+  }
 
   // Créer la carte
   map = L.map(mapContainer.value, {
     center: [userCoords.latitude, userCoords.longitude],
-    zoom: 15,
+    zoom: isDefaultPosition ? 13 : 16,  // Zoom plus proche si position réelle
     zoomControl: false,
   });
 
@@ -135,11 +147,13 @@ const initMap = async () => {
     maxZoom: 19,
   }).addTo(map);
 
-  // Ajouter le marqueur de l'utilisateur
-  userMarker = L.marker([userCoords.latitude, userCoords.longitude], {
-    icon: userIcon,
-  }).addTo(map);
-  userMarker.bindPopup('Vous êtes ici');
+  // Ajouter le marqueur de l'utilisateur (seulement si position réelle)
+  if (!isDefaultPosition) {
+    userMarker = L.marker([userCoords.latitude, userCoords.longitude], {
+      icon: userIcon,
+    }).addTo(map);
+    userMarker.bindPopup('Vous êtes ici').openPopup();
+  }
 
   // Gestionnaire de clic pour placer un marqueur
   if (props.allowMarkerPlacement) {
@@ -223,15 +237,31 @@ const centerOnUser = async () => {
   if (!map) return;
 
   locating.value = true;
+  console.log('Centering on user...');
+  
   const coords = await getCurrentPosition();
+  console.log('Got coordinates for centering:', coords);
 
-  // Mettre à jour la position du marqueur utilisateur
-  if (userMarker) {
-    userMarker.setLatLng([coords.latitude, coords.longitude]);
+  // Vérifier si on a la vraie position
+  const isDefaultPosition = 
+    coords.latitude === DEFAULT_COORDS.latitude && 
+    coords.longitude === DEFAULT_COORDS.longitude;
+
+  // Mettre à jour ou créer le marqueur utilisateur
+  if (!isDefaultPosition) {
+    if (userMarker) {
+      userMarker.setLatLng([coords.latitude, coords.longitude]);
+    } else {
+      userMarker = L.marker([coords.latitude, coords.longitude], {
+        icon: userIcon,
+      }).addTo(map);
+      userMarker.bindPopup('Vous êtes ici');
+    }
+    userMarker.openPopup();
   }
 
   // Centrer la carte
-  map.setView([coords.latitude, coords.longitude], 16);
+  map.setView([coords.latitude, coords.longitude], isDefaultPosition ? 13 : 17);
   locating.value = false;
 };
 
