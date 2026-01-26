@@ -1,12 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Signalements from './pages/Signalements'
-import SignalementDetails from './pages/SignalementDetails'
-import UsersManagement from './pages/UsersManagement'
-import MapView from './pages/MapView'
+import LoginFirebase from "./pages/LoginFirebase";
+
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Signalements from "./pages/Signalements";
+import SignalementDetails from "./pages/SignalementDetails";
+import UsersManagement from "./pages/UsersManagement";
+import MapView from "./pages/MapView";
+
+
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -18,7 +21,8 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          
+           <Route path="/login" element={<LoginFirebase />} /> 
           <Route path="/register" element={<Register />} />
           <Route path="/map" element={<MapView />} />
           <Route path="/dashboard" element={

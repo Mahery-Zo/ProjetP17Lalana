@@ -7,6 +7,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\EntrepriseController;
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -46,5 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/entreprises', [EntrepriseController::class, 'store']);
         Route::put('/entreprises/{id}', [EntrepriseController::class, 'update']);
         Route::delete('/entreprises/{id}', [EntrepriseController::class, 'destroy']);
+
+
+        //import users to firebase
+        Route::get('/admin/users-for-firebase', [UserController::class, 'getAllUsersForFirebase']);
     });
 });
