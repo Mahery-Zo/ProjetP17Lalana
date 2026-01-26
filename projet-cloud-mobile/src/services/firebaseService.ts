@@ -20,7 +20,8 @@ export const login = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error: any) {
-    throw new Error(error.message); // Gère erreurs (ex: "auth/user-not-found")
+    // Propager l'erreur Firebase originale pour préserver la propriété 'code'
+    throw error;
   }
 };
 
