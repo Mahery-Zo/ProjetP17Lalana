@@ -1,7 +1,8 @@
 import { 
   signInWithEmailAndPassword, 
   onAuthStateChanged, 
-  signOut 
+  signOut,
+  User
 } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { 
@@ -11,25 +12,27 @@ import {
   query, 
   where, 
   updateDoc, 
-  doc 
+  doc,
+  serverTimestamp,
+  Timestamp,
+  orderBy,
+  deleteDoc,
+  getDoc
 } from 'firebase/firestore';
+import type { Signalement, Entreprise } from '@/types/firebase.types';
 
-// Auth
-export const login = async (email: string, password: string) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
-  } catch (error: any) {
-    // Propager l'erreur Firebase originale pour préserver la propriété 'code'
-    throw error;
-  }
+// ==================== AUTH ====================
+
+export const login = async (email: string, password: string): Promise<User> => {
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  return userCredential.user;
 };
 
-export const logout = async () => {
+export const logout = async (): Promise<void> => {
   await signOut(auth);
 };
 
-export const getCurrentUser = () => {
+export const getCurrentUser = (): Promise<User | null> => {
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
@@ -38,28 +41,98 @@ export const getCurrentUser = () => {
   });
 };
 
-// Firestore Signalements (exemples basiques – on étendra plus tard)
-export const addSignalement = async (data: any) => {
-  try {
-    const docRef = await addDoc(collection(db, 'signalements'), {
-      ...data,
-      userId: auth.currentUser?.uid,
-      synced: true, // En ligne
-      createdAt: new Date(),
-    });
-    return docRef.id;
-  } catch (error) {
-    console.error('Erreur ajout signalement:', error);
-    throw error;
+// ==================== SIGNALEMENTS ====================
+
+export const addSignalement = async (data: Omit<Signalement, 'id' | 'userId' | 'createdAt' | 'synced'>): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error('Utilisateur non authentifié');
   }
+
+  const signalement: Omit<Signalement, 'id'> = {
+    ...data,
+    userId: auth.currentUser.uid,
+    synced: true,
+    createdAt: serverTimestamp() as Timestamp,
+    updatedAt: serverTimestamp() as Timestamp,
+  };
+
+  const docRef = await addDoc(collection(db, 'signalements'), signalement);
+  return docRef.id;
 };
 
-export const getMesSignalements = async () => {
+export const getMesSignalements = async (): Promise<Signalement[]> => {
   if (!auth.currentUser) return [];
+  
   const q = query(
     collection(db, 'signalements'),
-    where('userId', '==', auth.currentUser.uid)
+    where('userId', '==', auth.currentUser.uid),
+    orderBy('createdAt', 'desc')
   );
+  
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data() 
+  } as Signalement));
+};
+
+export const getTousLesSignalements = async (): Promise<Signalement[]> => {
+  const q = query(
+    collection(db, 'signalements'),
+    orderBy('createdAt', 'desc')
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data() 
+  } as Signalement));
+};
+
+export const getSignalementById = async (id: string): Promise<Signalement | null> => {
+  const docRef = doc(db, 'signalements', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Signalement;
+  }
+  return null;
+};
+
+export const updateSignalement = async (id: string, data: Partial<Signalement>): Promise<void> => {
+  const docRef = doc(db, 'signalements', id);
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteSignalement = async (id: string): Promise<void> => {
+  const docRef = doc(db, 'signalements', id);
+  await deleteDoc(docRef);
+};
+
+// ==================== ENTREPRISES ====================
+
+export const getEntreprises = async (): Promise<Entreprise[]> => {
+  const q = query(
+    collection(db, 'entreprises'),
+    where('active', '==', true)
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data() 
+  } as Entreprise));
+};
+
+export const getEntrepriseById = async (id: string): Promise<Entreprise | null> => {
+  const docRef = doc(db, 'entreprises', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Entreprise;
+  }
+  return null;
 };
