@@ -17,12 +17,29 @@
         <strong>Ready to create an app?</strong>
         <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
       </div>
+
+      <button @click="testLogin">Test Login</button>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+
+import { login, getCurrentUser } from '@/services/firebaseService';
+import { getMesSignalements } from '@/services/firebaseService';
+
+const testLogin = async () => {
+  try {
+    // Utilise un compte créé via web manager
+    const user = await login('test@exemple.com', 'password123');
+    console.log('Login OK:', user);
+    const mesSig = await getMesSignalements();
+    console.log('Mes signalements:', mesSig);
+  } catch (e) {
+    console.error(e);
+  }
+};
 </script>
 
 <style scoped>
