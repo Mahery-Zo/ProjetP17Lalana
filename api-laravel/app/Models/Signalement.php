@@ -18,6 +18,7 @@ class Signalement extends Model
         'surface_m2',
         'budget',
         'entreprise',
+        'entreprise_id',
         'photo_url',
         'synced_to_firebase',
     ];
@@ -33,5 +34,10 @@ class Signalement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function entreprise()
+    {
+        return $this->belongsTo(Entreprise::class);
     }
 }
