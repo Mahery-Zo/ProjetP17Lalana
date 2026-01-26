@@ -2,6 +2,18 @@ import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import HomePage from '../views/HomePage.vue'
 
+// Ajoute ces imports
+import { getCurrentUser } from '@/services/firebaseService';
+
+router.beforeEach(async (to, from, next) => {
+  const user = await getCurrentUser();
+  if (to.path !== '/login' && !user) {
+    next('/login');  // Redirige non-auth vers login
+  } else {
+    next();
+  }
+});
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
