@@ -4,6 +4,37 @@ import router from './router';
 
 import { IonicVue } from '@ionic/vue';
 
+/* Import Ionicons */
+import { addIcons } from 'ionicons';
+import {
+  logOutOutline,
+  add,
+  locateOutline,
+  hourglassOutline,
+  funnelOutline,
+  funnel,
+  person,
+  closeCircle,
+  cameraOutline,
+  statsChartOutline,
+  alertCircle,
+} from 'ionicons/icons';
+
+/* Register icons */
+addIcons({
+  'log-out-outline': logOutOutline,
+  'add': add,
+  'locate-outline': locateOutline,
+  'hourglass-outline': hourglassOutline,
+  'funnel-outline': funnelOutline,
+  'funnel': funnel,
+  'person': person,
+  'close-circle': closeCircle,
+  'camera-outline': cameraOutline,
+  'stats-chart-outline': statsChartOutline,
+  'alert-circle': alertCircle,
+});
+
 import { auth, db } from './firebase';
 
 /* Core CSS required for Ionic components to work properly */
