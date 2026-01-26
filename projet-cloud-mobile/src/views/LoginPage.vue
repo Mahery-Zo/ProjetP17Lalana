@@ -19,9 +19,10 @@
       </ion-button>
       <ion-toast
         :is-open="showToast"
-        message="Erreur de connexion : {{ errorMessage }}"
+        :message="`Erreur de connexion : ${errorMessage}`"
         duration="3000"
         position="bottom"
+        color="danger"
         @didDismiss="showToast = false"
       ></ion-toast>
       <ion-loading :is-open="loading" message="Connexion en cours..."></ion-loading>
