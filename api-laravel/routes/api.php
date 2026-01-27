@@ -27,6 +27,12 @@ Route::get('/signalements/{id}', [SignalementController::class, 'show']);
 // Public entreprises
 Route::get('/entreprises', [EntrepriseController::class, 'index']);
 
+// Firebase import (SANS auth:sanctum)
+Route::middleware(['import.key'])->group(function () {
+    Route::get('/firebase/users', [UserController::class, 'getAllUsersForFirebase']);
+});
+
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -36,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Signalements (authentifié)
     Route::post('/signalements', [SignalementController::class, 'store']);
     Route::get('/signalements/user/mine', [SignalementController::class, 'mySignalements']);
-    
+ 
     // Manager only routes
     Route::middleware('role:manager')->group(function () {
         Route::post('/sync/firebase', [SignalementController::class, 'syncFirebase']);
@@ -51,7 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/entreprises/{id}', [EntrepriseController::class, 'destroy']);
 
 
-        //import users to firebase
-        Route::get('/admin/users-for-firebase', [UserController::class, 'getAllUsersForFirebase']);
+     
+
     });
 });

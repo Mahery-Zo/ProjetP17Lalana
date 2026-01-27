@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Signalement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class SignalementController extends Controller
 {
@@ -85,9 +86,89 @@ class SignalementController extends Controller
         return response()->json($signalement->load('entreprise'));
     }
 
-    public function syncFirebase(Request $request)
-    {
-        // TODO: Implement Firebase sync logic
-        return response()->json(['message' => 'Synchronisation Firebase en cours']);
+public function syncFirebase(Request $request)
+{
+    $db = Firebase::database();
+    $ref = $db->getReference('incoming_signalements');
+    $items = $ref->getValue() ?? [];
+
+    $imported = 0;
+    $skipped = 0;
+
+    foreach ($items as $firebaseId => $data) {
+
+        // 1️⃣ Skip if already synced in Firebase
+        if (!empty($data['synced'])) {
+            $skipped++;
+            continue;
+        }
+
+        // 2️⃣ Prevent duplicates (CRITICAL)
+        if (Signalement::where('firebase_id', $firebaseId)->exists()) {
+            $ref->getChild($firebaseId)->update(['synced' => true]);
+            $skipped++;
+            continue;
+        }
+
+        DB::transaction(function () use ($firebaseId, $data, $request, $ref, &$imported) {
+
+            $signalement = Signalement::create([
+                'user_id' => $request->user()->id, // manager or mapped user
+                'latitude' => $data['latitude'],
+                'longitude' => $data['longitude'],
+                'description' => $data['description'] ?? null,
+                'photo_url' => $data['photo_url'] ?? null,
+                'status' => $data['status'] ?? 'nouveau',
+
+                'firebase_id' => $firebaseId,
+                'source' => 'firebase',
+                'synced_at' => now(),
+                'synced_to_firebase' => false,
+            ]);
+
+            // 3️⃣ Ack back to Firebase
+            $ref->getChild($firebaseId)->update([
+                'synced' => true,
+                'pg_id' => $signalement->id,
+                'synced_at' => now()->toISOString(),
+            ]);
+
+            $imported++;
+        });
     }
+
+    return response()->json([
+        'message' => 'Firebase ➜ PostgreSQL sync done',
+        'imported' => $imported,
+        'skipped' => $skipped,
+    ]);
+}
+
+public function pushToFirebase()
+{
+    $db = Firebase::database();
+    $ref = $db->getReference('signalements');
+
+    $signalements = Signalement::where('synced_to_firebase', false)->get();
+
+    foreach ($signalements as $s) {
+        $ref->getChild((string) $s->id)->set([
+            'id' => $s->id,
+            'latitude' => (float) $s->latitude,
+            'longitude' => (float) $s->longitude,
+            'description' => $s->description,
+            'status' => $s->status,
+            'photo_url' => $s->photo_url,
+            'source' => $s->source,
+            'updated_at' => $s->updated_at->toISOString(),
+        ]);
+
+        $s->update(['synced_to_firebase' => true]);
+    }
+
+    return response()->json([
+        'message' => 'PostgreSQL ➜ Firebase sync done',
+        'count' => $signalements->count(),
+    ]);
+}
 }

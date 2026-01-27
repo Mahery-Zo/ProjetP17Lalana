@@ -62,6 +62,7 @@ services:
     environment:
       DOWNLOAD_PBF: "https://download.geofabrik.de/africa/madagascar-latest.osm.pbf"
       DOWNLOAD_POLY: "https://download.geofabrik.de/africa/madagascar.poly"
+      FIREBASE_IMPORT_KEY: super-secret-import-key
     networks:
       - lalana_network
 
