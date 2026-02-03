@@ -32,3 +32,10 @@ npm-debug.log*
 /www
 
 .env*
+
+# Android native build artifacts
+android/.gradle/
+android/**/build/
+android/local.properties
+android/*.keystore
+android/.idea/
