@@ -89,12 +89,27 @@ export function AuthProvider({ children }) {
     setSource("local");
     return data;
   };
+  // const getrole = async (user) => {
+  //   if (source === "firebase") {
+  //     // Fetch role from your database if needed
+  //     return "user"; // default role
+  //   }
+  // };
 
   //  Firebase login
   const loginFirebase = async (email, password) => {
     const res = await signInWithEmailAndPassword(auth, email.trim(), password);
+    // const token = await res.user.getIdToken();
     localStorage.setItem("auth_source", "firebase");
-    setUser({ id: res.user.uid, email: res.user.email });
+    localStorage.setItem("auth_source", "firebase");
+     const data = await authService.login(email, password)
+    
+    setUser({ id: res.user.uid, email: res.user.email , role: data.user.role});
+     setLocalSession(data);
+    
+  // localStorage.setItem("token", data.token);
+  // localStorage.setItem("user", JSON.stringify(data.user));
+   
     setSource("firebase");
     return res.user;
   };
@@ -117,6 +132,7 @@ export function AuthProvider({ children }) {
       if (isNetwork) {
         return loginLocal(email, password);
       }
+     
 
       // Real auth error (wrong password, user not found...) → don't fallback
       throw err;

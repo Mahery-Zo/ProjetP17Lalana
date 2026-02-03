@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { syncService } from '../services/api'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -10,6 +11,17 @@ export default function Dashboard() {
     await logout()
     navigate('/login')
   }
+
+
+  const handleSync = async () => {
+  try {
+    const res = await syncService.syncFirebase()
+    alert(res.message || 'Synchronisation terminée')
+  } catch (err) {
+    alert('Erreur lors de la synchronisation')
+    console.error(err)
+  }
+}
 
   return (
     <div className="dashboard">
@@ -54,9 +66,17 @@ export default function Dashboard() {
             >
               Gérer les utilisateurs
             </button>
+             
           )}
+          
+         
+          <button onClick={handleSync}>
+                🔄 Synchroniser Firebase
+               </button>
+          
         </div>
       </div>
     </div>
   )
-}
+  }
+

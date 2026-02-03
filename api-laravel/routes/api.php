@@ -30,6 +30,7 @@ Route::get('/entreprises', [EntrepriseController::class, 'index']);
 // Firebase import (SANS auth:sanctum)
 Route::middleware(['import.key'])->group(function () {
     Route::get('/firebase/users', [UserController::class, 'getAllUsersForFirebase']);
+    Route::get('/firebase/users', [UserController::class, 'pushUsersToFirebase']);
 });
 
 

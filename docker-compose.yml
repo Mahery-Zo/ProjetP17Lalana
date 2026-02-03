@@ -1,5 +1,4 @@
 services:
-  # PHP-FPM Application
   app:
     build:
       context: ./api-laravel
@@ -20,7 +19,6 @@ services:
     networks:
       - lalana_network
 
-  # Nginx Web Server
   web:
     image: nginx:1.25
     container_name: lalana_nginx
@@ -35,7 +33,21 @@ services:
     networks:
       - lalana_network
 
-  # PostgreSQL Database
+  firebase_import_api:
+    image: node:20-alpine
+    working_dir: /app/firebase-admin
+    volumes:
+      - ./:/app
+    env_file:
+      - ./firebase-admin/.env
+    command: ["node", "server.js"]
+    ports:
+      - "5050:5050"
+    depends_on:
+      - web
+    networks:
+      - lalana_network
+
   postgres:
     image: postgres:15-alpine
     container_name: lalana_postgres
@@ -51,7 +63,6 @@ services:
     networks:
       - lalana_network
 
-  # Tile Server for Offline Maps
   tile_server:
     image: overv/openstreetmap-tile-server
     container_name: lalana_tile_server
@@ -62,7 +73,6 @@ services:
     environment:
       DOWNLOAD_PBF: "https://download.geofabrik.de/africa/madagascar-latest.osm.pbf"
       DOWNLOAD_POLY: "https://download.geofabrik.de/africa/madagascar.poly"
-      FIREBASE_IMPORT_KEY: super-secret-import-key
     networks:
       - lalana_network
 

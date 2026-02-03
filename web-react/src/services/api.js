@@ -10,29 +10,39 @@ const api = axios.create({
 })
 
 // Intercepteur pour ajouter le token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+// api.interceptors.request.use(
+//   (config) => {
+//     const token = localStorage.getItem('token')
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`
+//     }
+//     return config
+//   },
+//   (error) => Promise.reject(error)
+// )
 
-// Intercepteur pour gérer les erreurs 401
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
+// // Intercepteur pour gérer les erreurs 401
+// api.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     if (error.response?.status === 401) {
+//       localStorage.removeItem('token')
+//       localStorage.removeItem('user')
+//       window.location.href = '/login'
+//     }
+//     return Promise.reject(error)
+//   }
+// )
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  console.log("REQ:", config.method, config.baseURL + config.url);
+  console.log("TOKEN:", token);
+  config.headers.Accept = "application/json"; // helpful
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  console.log("AUTH HEADER:", config.headers.Authorization);
+  return config;
+});
 
 export const authService = {
   login: async (email, password) => {
@@ -41,11 +51,11 @@ export const authService = {
   },
 
   register: async (name, email, password, password_confirmation) => {
-    const response = await api.post('/register', { 
-      name, 
-      email, 
-      password, 
-      password_confirmation 
+    const response = await api.post('/register', {
+      name,
+      email,
+      password,
+      password_confirmation
     })
     return response.data
   },
@@ -108,5 +118,22 @@ export const userService = {
     return response.data
   }
 }
+
+export const syncService = {
+  syncFirebase: async () => {
+    const { data } = await api.post("/sync/firebase");
+    return data;
+  },
+};
+
+
+export const pushService = {
+  syncFirebase: async () => {
+    const response = await api.post('/push/firebase')
+    return response.data
+  }
+}
+
+
 
 export default api

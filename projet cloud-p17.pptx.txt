@@ -115,3 +115,5 @@ Présenter les scénarios d’utilisations avec copie d’écrans
 Liste des membres
 Nom et prénoms et NumETU
 
+
+curl -i "http://127.0.0.1:8000/api/firebase/users?per_page=2&page=1" -H "X-IMPORT-KEY: your-very-secret-key" -H "Accept: application/json"
