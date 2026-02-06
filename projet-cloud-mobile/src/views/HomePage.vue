@@ -2,6 +2,27 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button 
+            fill="clear" 
+            @click="goToNotifications"
+            class="notification-button">
+            <ion-icon name="notifications"></ion-icon>
+            <ion-badge 
+              v-if="unreadCount > 0" 
+              color="danger" 
+              class="notification-badge">
+              {{ unreadCount }}
+            </ion-badge>
+          </ion-button>
+
+          <ion-button 
+            fill="clear" 
+            @click="goToStatusSimulator"
+            class="status-button">
+            <ion-icon name="refresh"></ion-icon>
+          </ion-button>
+        </ion-buttons>
         <ion-title>Lalana - Signalements</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="toggleFilter">
@@ -109,6 +130,11 @@
                 <p>{{ selectedSignalement.latitude.toFixed(6) }}, {{ selectedSignalement.longitude.toFixed(6) }}</p>
               </ion-label>
             </ion-item>
+            <!-- Photos du signalement -->
+            <PhotoGallery 
+              v-if="selectedSignalement.id" 
+              :photos="signalementPhotos" 
+            />
           </ion-list>
         </ion-content>
       </ion-modal>
@@ -139,12 +165,16 @@ import {
 } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 import { logout as firebaseLogout, getTousLesSignalements, getMesSignalements } from '@/services/firebaseService';
-import { auth } from '@/firebase';
+import { auth, db } from '@/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import MapComponent from '@/components/MapComponent.vue';
 import SignalementForm from '@/components/SignalementForm.vue';
 import RecapCard from '@/components/RecapCard.vue';
+import PhotoGallery from '@/components/PhotoGallery.vue';
+import { SignalementPhotosService } from '@/services/signalementPhotos.service';
 import type { Signalement } from '@/types/firebase.types';
 import type { Coordinates } from '@/services/geolocationService';
+import type { NotificationData } from '@/services/notifications.service';
 
 const router = useRouter();
 const mapRef = ref<InstanceType<typeof MapComponent> | null>(null);
@@ -161,6 +191,8 @@ const selectedSignalement = ref<Signalement | null>(null);
 const showToast = ref(false);
 const toastMessage = ref('');
 const toastColor = ref('primary');
+const unreadCount = ref(0);
+const signalementPhotos = ref<any[]>([]);
 
 // Computed
 const filteredSignalements = computed(() => {
@@ -221,9 +253,20 @@ const handleSignalementSuccess = async () => {
   showNotification('Signalement créé avec succès !', 'success');
 };
 
-const handleSignalementClick = (signalement: Signalement) => {
+const handleSignalementClick = async (signalement: Signalement) => {
   selectedSignalement.value = signalement;
   showSignalementDetail.value = true;
+  
+  // Charger les photos du signalement
+  if (signalement.id) {
+    try {
+      signalementPhotos.value = await SignalementPhotosService.getSignalementPhotos(signalement.id);
+      console.log('Photos chargées pour le signalement:', signalementPhotos.value);
+    } catch (error) {
+      console.error('Erreur chargement photos:', error);
+      signalementPhotos.value = [];
+    }
+  }
 };
 
 const closeSignalementDetail = () => {
@@ -255,9 +298,41 @@ const formatStatus = (status: string): string => {
   }
 };
 
+const goToNotifications = () => {
+  router.push('/notifications');
+};
+
+const goToStatusSimulator = () => {
+  router.push('/status-simulator');
+};
+
+const listenForNewNotifications = async () => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) return;
+
+  const notificationsRef = collection(db, 'users', userId, 'notifications');
+  
+  const unsubscribe = onSnapshot(notificationsRef, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === 'added') {
+        const notification = {
+          id: change.doc.id,
+          ...change.doc.data()
+        } as NotificationData;
+        
+        // Mettre à jour le compteur de notifications non lues
+        if (!notification.read) {
+          unreadCount.value++;
+        }
+      }
+    });
+  });
+};
+
 // Lifecycle
-onMounted(() => {
-  loadSignalements();
+onMounted(async () => {
+  await loadSignalements();
+  await listenForNewNotifications();
 });
 </script>
 

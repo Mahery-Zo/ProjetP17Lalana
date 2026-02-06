@@ -43,7 +43,7 @@ export const getCurrentUser = (): Promise<User | null> => {
 
 // ==================== SIGNALEMENTS ====================
 
-export const addSignalement = async (data: Omit<Signalement, 'id' | 'userId' | 'createdAt' | 'synced'>): Promise<string> => {
+export const addSignalement = async (data: Omit<Signalement, 'id' | 'userId' | 'createdAt' | 'synced'>): Promise<{id: string}> => {
   if (!auth.currentUser) {
     throw new Error('Utilisateur non authentifié');
   }
@@ -57,7 +57,7 @@ export const addSignalement = async (data: Omit<Signalement, 'id' | 'userId' | '
   };
 
   const docRef = await addDoc(collection(db, 'signalements'), signalement);
-  return docRef.id;
+  return { id: docRef.id };
 };
 
 export const getMesSignalements = async (): Promise<Signalement[]> => {

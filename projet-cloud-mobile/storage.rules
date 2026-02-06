@@ -3,7 +3,7 @@ service firebase.storage {
   match /b/{bucket}/o {
     
     // Dossier des photos de signalements
-    match /signalements/{userId}/{imageId} {
+    match /signalements/{userId}/{signalementId}/{imageId} {
       // Lecture : tous les utilisateurs authentifiés
       allow read: if request.auth != null;
       
@@ -20,7 +20,13 @@ service firebase.storage {
     match /temp/{userId}/{imageId} {
       allow read, write: if request.auth != null 
                          && request.auth.uid == userId
-                         && request.resource.size < 5 * 1024 * 1024;
+                         && request.resource.size < 5 * 1024 * 1024
+                         && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Accès CORS pour les requêtes web
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
     }
   }
 }
