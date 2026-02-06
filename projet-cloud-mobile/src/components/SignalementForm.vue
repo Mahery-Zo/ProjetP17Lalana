@@ -51,13 +51,12 @@
         ></ion-input>
       </ion-item>
 
-      <!-- Photo (optionnel - à implémenter plus tard) -->
-      <ion-item button @click="takePhoto" disabled>
-        <ion-icon slot="start" name="camera-outline"></ion-icon>
-        <ion-label>Ajouter une photo</ion-label>
-        <ion-note slot="end" color="medium">Bientôt disponible</ion-note>
-      </ion-item>
-
+      <!-- Photos -->
+      <PhotoUpload 
+        ref="photoUploadRef"
+        :maxPhotos="5"
+        @photos-uploaded="handlePhotosUploaded" />
+      
       <!-- Aperçu de la carte -->
       <div class="map-preview">
         <div class="preview-title">Aperçu de la position</div>
@@ -109,6 +108,8 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { addSignalement } from '@/services/firebaseService';
+import { FirestoreStorageService, type PhotoData } from '@/services/storage.service';
+import PhotoUpload from './PhotoUpload.vue';
 import type { Coordinates } from '@/services/geolocationService';
 
 // Props
@@ -125,6 +126,7 @@ const emit = defineEmits<{
 
 // State
 const previewMapRef = ref<HTMLElement | null>(null);
+const photoUploadRef = ref<InstanceType<typeof PhotoUpload> | null>(null);
 let previewMap: L.Map | null = null;
 let previewMarker: L.Marker | null = null;
 
@@ -133,6 +135,7 @@ const form = ref({
   surface_m2: null as number | null,
 });
 
+const uploadedPhotos = ref<PhotoData[]>([]);
 const submitting = ref(false);
 const showError = ref(false);
 const errorMessage = ref('');
@@ -160,12 +163,19 @@ const resetForm = () => {
     description: '',
     surface_m2: null,
   };
+  uploadedPhotos.value = [];
   errorMessage.value = '';
+  photoUploadRef.value?.clearPhotos();
+};
+
+const handlePhotosUploaded = (photos: PhotoData[]) => {
+  uploadedPhotos.value = photos;
+  console.log('Photos uploadées:', photos);
 };
 
 const takePhoto = () => {
-  // À implémenter plus tard avec Capacitor Camera
-  console.log('Photo feature coming soon');
+  // Fonctionnalité maintenant intégrée via PhotoUpload
+  console.log('Utiliser le composant PhotoUpload pour ajouter des photos');
 };
 
 const submitForm = async () => {
@@ -178,13 +188,47 @@ const submitForm = async () => {
   submitting.value = true;
 
   try {
-    await addSignalement({
-      latitude: props.coordinates.latitude,
-      longitude: props.coordinates.longitude,
-      description: form.value.description || undefined,
-      surface_m2: form.value.surface_m2 || undefined,
-      status: 'nouveau',
-    });
+    // Upload des photos d'abord
+    let photos: PhotoData[] = [];
+    if (photoUploadRef.value?.hasPhotos()) {
+      const userId = localStorage.getItem('userId') || 'anonymous';
+      
+      // Créer d'abord le signalement pour obtenir l'ID
+      const signalementData = {
+        latitude: props.coordinates.latitude,
+        longitude: props.coordinates.longitude,
+        description: form.value.description || undefined,
+        surface_m2: form.value.surface_m2 || undefined,
+        status: 'nouveau',
+        photos: [] // Sera mis à jour après
+      };
+      
+      console.log('Création signalement avec données:', signalementData);
+      const signalementResult = await addSignalement(signalementData);
+      const signalementId = signalementResult.id;
+      
+      console.log('Signalement créé avec ID:', signalementId);
+      console.log('Type de signalementId:', typeof signalementId);
+      console.log('Valeur signalementId:', signalementId);
+      
+      // Maintenant sauvegarder les photos avec le bon ID
+      photos = await photoUploadRef.value.uploadPhotos(signalementId, userId);
+      
+      console.log('Photos sauvegardées:', photos);
+      
+      // Mettre à jour le signalement avec les photos
+      // Note: Cette étape est optionnelle car les photos sont déjà dans Firestore
+    } else {
+      // Pas de photos, créer le signalement directement
+      await addSignalement({
+        latitude: props.coordinates.latitude,
+        longitude: props.coordinates.longitude,
+        description: form.value.description || undefined,
+        surface_m2: form.value.surface_m2 || undefined,
+        status: 'nouveau',
+        photos: []
+      });
+    }
 
     showSuccess.value = true;
   } catch (error: any) {

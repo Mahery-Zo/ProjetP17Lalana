@@ -1,0 +1,40 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+  location: String
+}
+
+type Report @table {
+  title: String!
+  description: String!
+  category: Category!
+  status: String!
+  location: String!
+  createdAt: Timestamp!
+  imageUrl: String
+  isPublic: Boolean
+  user: User
+}
+
+type Category @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Comment @table {
+  content: String!
+  createdAt: Timestamp!
+  user: User
+  report: Report
+}
+
+type StatusChange @table {
+  oldStatus: String!
+  newStatus: String!
+  createdAt: Timestamp!
+  user: User
+  report: Report
+}
