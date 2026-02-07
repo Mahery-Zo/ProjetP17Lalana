@@ -18,6 +18,12 @@ mobile-ionic/android/
 mobile-ionic/ios/
 mobile-ionic/.capacitor/
 
+# Web React
+web-react/node_modules/
+web-react/dist/
+web-react/build/
+web-react/.env
+
 # Docker
 postgres_data/
 tile_data/
@@ -35,3 +41,6 @@ Thumbs.db
 
 # Firebase
 firebase-credentials.json
+
+# General node_modules (catch-all)
+**/node_modules/
