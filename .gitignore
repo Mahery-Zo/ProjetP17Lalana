@@ -10,6 +10,7 @@ api-laravel/storage/framework/views/*
 api-laravel/storage/logs/*
 api-laravel/bootstrap/cache/*
 
+vendor/
 # Mobile Ionic
 mobile-ionic/node_modules/
 mobile-ionic/dist/
