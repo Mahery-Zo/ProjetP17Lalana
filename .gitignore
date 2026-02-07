@@ -24,6 +24,10 @@ web-react/dist/
 web-react/build/
 web-react/.env
 
+# Firebase / Cloud Mobile
+projet-cloud-mobile/firebase-functions/node_modules/
+projet-cloud-mobile/node_modules/
+
 # Docker
 postgres_data/
 tile_data/
