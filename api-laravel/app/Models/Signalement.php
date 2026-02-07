@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Signalement extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'latitude',
@@ -19,6 +17,11 @@ class Signalement extends Model
         'budget',
         'entreprise',
         'photo_url',
+
+        // sync fields
+        'firebase_id',
+        'source',
+        'synced_at',
         'synced_to_firebase',
     ];
 
@@ -28,10 +31,11 @@ class Signalement extends Model
         'surface_m2' => 'decimal:2',
         'budget' => 'decimal:2',
         'synced_to_firebase' => 'boolean',
+        'synced_at' => 'datetime',
     ];
 
-    public function user()
+       public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

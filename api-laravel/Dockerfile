@@ -1,23 +1,19 @@
-FROM php:8.2-fpm-bullseye
+FROM php:8.2-fpm-bookworm
 
-# Install system dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libpq-dev \
-    zip \
-    unzip \
+    git curl unzip zip ca-certificates \
+    libzip-dev libpng-dev libonig-dev libxml2-dev libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd
+# PHP extensions needed for Laravel + PostgreSQL
+RUN docker-php-ext-install \
+    pdo pdo_pgsql pgsql \
+    mbstring exif pcntl bcmath \
+    gd zip
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin \
-    --filename=composer
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /var/www/html
+ENV COMPOSER_ALLOW_SUPERUSER=1

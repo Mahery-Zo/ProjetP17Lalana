@@ -40,4 +40,6 @@ return [
         App\Providers\AppServiceProvider::class,
     ],
     'aliases' => [],
+    'firebase_import_key' => env('FIREBASE_IMPORT_KEY'),
+
 ];

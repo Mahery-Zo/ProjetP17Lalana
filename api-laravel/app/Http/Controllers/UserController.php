@@ -7,6 +7,8 @@ use App\Models\LoginAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class UserController extends Controller
 {
@@ -33,8 +35,8 @@ class UserController extends Controller
         }
         
         if ($request->has('password')) {
-            $user->password = Hash::make($request->password);
-        }
+                $user->password = Hash::make($request->password);
+            }
         
         $user->save();
 
@@ -57,4 +59,53 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Utilisateur débloqué', 'user' => $user]);
     }
+
+    public function getAllUsersForFirebase(Request $request)
+{
+    // OPTIONAL: simple security check (recommended)
+    // Header: X-IMPORT-KEY: your-secret-key
+    if ($request->header('X-IMPORT-KEY') !== config('app.firebase_import_key')) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    // Pagination (important for large DB)
+    $perPage = (int) $request->query('per_page', 1000);
+
+    $users = User::query()
+        ->select([
+            'id',
+            'name',
+            'email',
+            'password',
+            'email_verified_at',
+            'role',
+            'is_blocked',
+            'created_at'
+        ])
+        ->orderBy('id')
+        ->paginate($perPage);
+
+    $data = $users->getCollection()->map(function ($user) {
+        return [
+            'uid' => (string) $user->id,
+            'email' => $user->email,
+            'displayName' => $user->name,
+            'passwordHashBcrypt' => $user->password, // 👈 bcrypt hash
+            'emailVerified' => $user->email_verified_at !== null,
+            'disabled' => (bool) $user->is_blocked,
+            'role' => $user->role, // optional (for Firebase custom claims later)
+        ];
+    });
+
+    return response()->json([
+        'data' => $data,
+        'meta' => [
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage(),
+            'per_page' => $users->perPage(),
+            'total' => $users->total(),
+        ],
+    ]);
+}
+
 }
