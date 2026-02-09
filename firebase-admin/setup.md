@@ -49,3 +49,9 @@ docker compose exec app php artisan migrate
 
 
 i mean not push and pool signialment but push and pull users 
+
+
+# fix
+cd firebase-admin
+npm init -y
+npm i express axios firebase-admin dotenv
