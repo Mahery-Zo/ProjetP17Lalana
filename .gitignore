@@ -13,15 +13,26 @@ api-laravel/bootstrap/cache/*
 # Mobile Ionic
 mobile-ionic/node_modules/
 mobile-ionic/dist/
-mobile-ionic/.env
 mobile-ionic/android/
+mobile-ionic/.env
+mobile-ionic/vendor/
 mobile-ionic/ios/
 mobile-ionic/.capacitor/
+
+# Web React
+web-react/node_modules/
+web-react/dist/
+web-react/build/
+web-react/.env
+
+# Firebase / Cloud Mobile
+projet-cloud-mobile/firebase-functions/node_modules/
+projet-cloud-mobile/node_modules/
 
 # Docker
 postgres_data/
 tile_data/
-
+vendor/
 # IDE
 .vscode/
 .idea/
@@ -35,3 +46,7 @@ Thumbs.db
 
 # Firebase
 firebase-credentials.json
+
+# General node_modules (catch-all)
+**/node_modules/
+**/vendor/
