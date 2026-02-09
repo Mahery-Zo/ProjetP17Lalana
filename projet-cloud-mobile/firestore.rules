@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function pour vérifier si c'est le propriétaire
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Collection des signalements
+    match /signalements/{signalementId} {
+      // Lecture : tous les utilisateurs authentifiés peuvent lire
+      allow read: if isAuthenticated();
+      
+      // Création : uniquement pour les utilisateurs authentifiés
+      // L'userId doit correspondre à l'utilisateur connecté
+      allow create: if isAuthenticated() 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['latitude', 'longitude', 'userId', 'createdAt'])
+                    && request.resource.data.status in ['nouveau', 'en_cours', 'termine'];
+      
+      // Mise à jour : le propriétaire peut modifier ses propres signalements
+      allow update: if isOwner(resource.data.userId);
+      
+      // Suppression : le propriétaire peut supprimer ses signalements
+      allow delete: if isOwner(resource.data.userId);
+      
+      // Sous-collection des photos
+      match /photos/{photoId} {
+        // Lecture : tous les utilisateurs authentifiés peuvent voir les photos
+        allow read: if isAuthenticated();
+        
+        // Création : uniquement le propriétaire du signalement peut ajouter des photos
+        allow create: if isAuthenticated();
+        
+        // Mise à jour et suppression : uniquement le propriétaire
+        allow update, delete: if isAuthenticated();
+      }
+    }
+    
+    // Collection des entreprises (lecture seule pour les utilisateurs)
+    match /entreprises/{entrepriseId} {
+      allow read: if isAuthenticated();
+      // L'écriture sera gérée via l'API Laravel côté manager
+      allow write: if false;
+    }
+    
+    // Collection des profils utilisateurs
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+      
+      // Sous-collection des notifications
+      match /notifications/{notificationId} {
+        // Lecture : uniquement le propriétaire
+        allow read: if isOwner(userId);
+        
+        // Création : uniquement le propriétaire
+        allow create: if isOwner(userId);
+        
+        // Mise à jour : uniquement le propriétaire
+        allow update: if isOwner(userId);
+        
+        // Suppression : uniquement le propriétaire
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

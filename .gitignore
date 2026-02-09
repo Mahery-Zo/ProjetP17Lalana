@@ -11,6 +11,8 @@ api-laravel/storage/logs/*
 api-laravel/bootstrap/cache/*
 firebase-admin/node_modules/
 /vendor/
+
+vendor/
 # Mobile Ionic
 mobile-ionic/node_modules/
 mobile-ionic/dist/
@@ -51,3 +53,4 @@ firebase-credentials.json
 # General node_modules (catch-all)
 **/node_modules/
 **/vendor/
+**/node_modules/

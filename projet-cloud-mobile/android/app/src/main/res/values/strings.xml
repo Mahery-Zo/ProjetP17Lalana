@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lalana</string>
+    <string name="title_activity_main">Lalana</string>
+    <string name="package_name">mg.lalana.mobile</string>
+    <string name="custom_url_scheme">mg.lalana.mobile</string>
+</resources>
