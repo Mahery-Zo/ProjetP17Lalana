@@ -90,13 +90,32 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 /**
  * POST /api/import/users/from-postgres
  * Pull from API_BASE paginated and import into Firebase Auth.
+ * Re-runs: treat "already exists" as SKIPPED (not a failure).
  */
 app.post("/api/import/users/from-postgres", requireTriggerKey, async (req, res) => {
   try {
     let page = 1;
-    let totalImported = 0;
-    let totalFailures = 0;
+
+    let totalImported = 0;          // imported this run
+    let skippedAlreadyExists = 0;   // uid/email already exists
+    let hardFailures = 0;           // real errors
     let batches = 0;
+
+    const ALREADY_EXISTS_CODES = new Set([
+      "auth/uid-already-exists",
+      "auth/email-already-exists",
+      "auth/phone-number-already-exists",
+    ]);
+
+    const isAlreadyExists = (err) => {
+      const code = err?.code || "";
+      const msg = (err?.message || "").toLowerCase();
+      return (
+        ALREADY_EXISTS_CODES.has(code) ||
+        msg.includes("already exists") ||
+        msg.includes("already-exists")
+      );
+    };
 
     while (true) {
       const response = await fetchPage(page);
@@ -121,20 +140,38 @@ app.post("/api/import/users/from-postgres", requireTriggerKey, async (req, res) 
           hash: { algorithm: "BCRYPT" },
         });
 
-        const okCount = importList.length - result.failureCount;
-        totalImported += okCount;
-        totalFailures += result.failureCount;
+        let batchSkipped = 0;
+        let batchHardFailures = 0;
+
+        if (result.failureCount && result.errors?.length) {
+          for (const e of result.errors) {
+            const u = importList[e.index];
+            const err = e.error;
+
+            if (isAlreadyExists(err)) {
+              batchSkipped++;
+              console.log(
+                `SKIP (exists) index=${e.index} uid=${u?.uid} email=${u?.email} code=${err?.code}`
+              );
+            } else {
+              batchHardFailures++;
+              console.error(
+                `FAIL index=${e.index} uid=${u?.uid} email=${u?.email} code=${err?.code} msg=${err?.message}`
+              );
+            }
+          }
+        }
+
+        const batchImported = importList.length - (batchSkipped + batchHardFailures);
+
+        totalImported += batchImported;
+        skippedAlreadyExists += batchSkipped;
+        hardFailures += batchHardFailures;
         batches++;
 
-        // Optional: log failures server-side
-        if (result.failureCount) {
-          result.errors.forEach((e) => {
-            const u = importList[e.index];
-            console.error(
-              `IMPORT FAIL index=${e.index} uid=${u?.uid} msg=${e.error.message}`
-            );
-          });
-        }
+        console.log(
+          `✅ batch imported=${batchImported} | skipped(exists)=${batchSkipped} | hardFailures=${batchHardFailures}`
+        );
       }
 
       if (meta?.last_page && page >= meta.last_page) break;
@@ -142,9 +179,10 @@ app.post("/api/import/users/from-postgres", requireTriggerKey, async (req, res) 
     }
 
     return res.json({
-      message: "Postgres/API ➜ Firebase import done",
+      message: "Postgres/API ➜ Firebase import done (re-runs skip existing users)",
       totalImported,
-      totalFailures,
+      skippedAlreadyExists,
+      hardFailures,
       batches,
       pagesProcessed: page,
     });
