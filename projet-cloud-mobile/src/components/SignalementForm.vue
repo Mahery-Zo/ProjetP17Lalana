@@ -199,7 +199,7 @@ const submitForm = async () => {
         longitude: props.coordinates.longitude,
         description: form.value.description || undefined,
         surface_m2: form.value.surface_m2 || undefined,
-        status: 'nouveau',
+        status: 'nouveau' as const,
         photos: [] // Sera mis à jour après
       };
       
@@ -225,8 +225,7 @@ const submitForm = async () => {
         longitude: props.coordinates.longitude,
         description: form.value.description || undefined,
         surface_m2: form.value.surface_m2 || undefined,
-        status: 'nouveau',
-        photos: []
+        status: 'nouveau' as const
       });
     }
 

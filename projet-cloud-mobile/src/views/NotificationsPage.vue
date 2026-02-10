@@ -77,7 +77,7 @@ import {
   IonLabel, IonChip, IonAvatar, IonBadge
 } from '@ionic/vue';
 import { 
-  notifications, 
+  notifications as notificationsIcon, 
   notificationsOff, 
   arrowBack, 
   checkmarkDone,
@@ -147,9 +147,9 @@ const goBack = () => {
   router.back();
 };
 
-const formatDate = (date: Date): string => {
+const formatDate = (date: Date | any): string => {
   const now = new Date();
-  const notificationDate = date instanceof Date ? date : date.toDate();
+  const notificationDate = date instanceof Date ? date : (date?.toDate ? date.toDate() : new Date(date));
   const diffMs = now.getTime() - notificationDate.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
@@ -168,7 +168,7 @@ const getStatusIcon = (status?: string): string => {
     case 'nouveau': return alertCircle;
     case 'en_cours': return time;
     case 'termine': return checkmarkCircle;
-    default: return notifications;
+    default: return notificationsIcon;
   }
 };
 

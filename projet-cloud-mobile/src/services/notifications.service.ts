@@ -1,5 +1,29 @@
-import { doc, onSnapshot, collection, addDoc, query, where, orderBy, getDocs, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { 
+  doc, 
+  onSnapshot, 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  updateDoc,
+  setDoc,
+  deleteDoc
+} from 'firebase/firestore';
+import { 
+  getMessaging, 
+  getToken, 
+  onMessage, 
+  deleteToken 
+} from 'firebase/messaging';
+import { auth, db } from '../firebase';
+
+export interface FCMToken {
+  token: string;
+  createdAt: Date;
+  userAgent: string;
+}
 
 export interface NotificationData {
   id: string;
@@ -15,19 +39,203 @@ export interface NotificationData {
 }
 
 export class NotificationService {
+  private static messaging: any = null;
+  private static vapidKey = 'YOUR_VAPID_KEY_HERE'; // À configurer
   private static listeners: Map<string, () => void> = new Map();
 
   /**
-   * Initialise le service de notifications pour un utilisateur
+   * Initialise le service pour un utilisateur spécifique
    */
-  static async initialize(userId: string): Promise<void> {
-    console.log('Initialisation du service de notifications pour utilisateur:', userId);
+  static async initializeForUser(userId: string): Promise<void> {
+    console.log('Initialisation FCM pour utilisateur:', userId);
     
-    // Démarrer l'écoute des changements de statut
+    // Initialiser FCM
+    await this.initialize();
+    
+    // Écouter les changements de statut
     this.listenForStatusChanges(userId);
     
-    // Démarrer l'écoute des notifications
+    // Écouter les notifications directes
     this.listenForNotifications(userId);
+  }
+
+  /**
+   * Initialise le service de notifications FCM avec demande d'autorisation
+   */
+  static async initialize(): Promise<void> {
+    try {
+      console.log('🔔 Initialisation FCM...');
+      
+      // Initialiser Firebase Messaging
+      this.messaging = getMessaging();
+      
+      // Demander la permission de notification
+      const permissionGranted = await this.requestPermission();
+      if (!permissionGranted) {
+        console.log('❌ Permission notification refusée');
+        this.showPermissionDeniedMessage();
+        return;
+      }
+      
+      console.log('✅ Permission notification accordée');
+      
+      // Récupérer et sauvegarder le token FCM
+      await this.saveFCMToken();
+      
+      // Écouter les messages en premier plan
+      onMessage(this.messaging, (payload) => {
+        console.log('📨 Message FCM reçu en premier plan:', payload);
+        this.showLocalNotification(payload);
+      });
+      
+      console.log('🎉 Service FCM initialisé avec succès');
+    } catch (error) {
+      console.error('❌ Erreur initialisation FCM:', error);
+    }
+  }
+
+  /**
+   * Demande la permission de notification avec interface utilisateur
+   */
+  static async requestPermission(): Promise<boolean> {
+    try {
+      console.log('🔔 Demande de permission de notification...');
+      
+      // Vérifier si les notifications sont supportées
+      if (!('Notification' in window)) {
+        console.log('❌ Notifications non supportées par ce navigateur');
+        this.showUnsupportedMessage();
+        return false;
+      }
+      
+      // Vérifier si la permission est déjà accordée
+      if (Notification.permission === 'granted') {
+        console.log('✅ Permission déjà accordée');
+        return true;
+      }
+      
+      // Vérifier si la permission a été refusée
+      if (Notification.permission === 'denied') {
+        console.log('❌ Permission déjà refusée');
+        this.showPermissionDeniedMessage();
+        return false;
+      }
+      
+      // Demander la permission
+      const permission = await Notification.requestPermission();
+      console.log('📋 Réponse permission:', permission);
+      
+      if (permission === 'granted') {
+        console.log('✅ Permission accordée par l\'utilisateur');
+        this.showPermissionGrantedMessage();
+        return true;
+      } else if (permission === 'denied') {
+        console.log('❌ Permission refusée par l\'utilisateur');
+        this.showPermissionDeniedMessage();
+        return false;
+      } else {
+        console.log('⏳ Permission en attente');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erreur demande permission:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Affiche un message quand la permission est accordée
+   */
+  private static showPermissionGrantedMessage(): void {
+    console.log('✅ Notifications activées avec succès');
+    // Ne plus afficher de notification système pour éviter les conflits
+  }
+
+  /**
+   * Affiche un message quand la permission est refusée
+   */
+  private static showPermissionDeniedMessage(): void {
+    console.log('📢 Pour activer les notifications:');
+    console.log('1. Cliquez sur l\'icône 🔒 dans la barre d\'adresse');
+    console.log('2. Activez les "Notifications"');
+    console.log('3. Rechargez la page');
+    
+    // Ne plus afficher l'alerte visuelle qui bloque l'application
+    // L'utilisateur verra les instructions dans la console uniquement
+  }
+
+  /**
+   * Affiche un message si les notifications ne sont pas supportées
+   */
+  private static showUnsupportedMessage(): void {
+    console.log('❌ Ce navigateur ne supporte pas les notifications');
+    console.log('📱 Utilisez Chrome, Firefox, Edge ou Safari pour recevoir des notifications');
+  }
+
+  /**
+   * Récupère et sauvegarde le token FCM
+   */
+  static async saveFCMToken(): Promise<void> {
+    try {
+      if (!auth.currentUser) {
+        console.log('Utilisateur non connecté, sauvegarde token ignorée');
+        return;
+      }
+
+      const currentToken = await getToken(this.messaging, {
+        vapidKey: this.vapidKey
+      });
+
+      if (currentToken) {
+        console.log('Token FCM obtenu:', currentToken.substring(0, 20) + '...');
+        
+        // Sauvegarder le token dans Firestore
+        const userId = auth.currentUser.uid;
+        const tokenId = currentToken.substring(0, 20); // Utiliser une partie du token comme ID
+        
+        const tokenData: FCMToken = {
+          token: currentToken,
+          createdAt: new Date(),
+          userAgent: navigator.userAgent
+        };
+
+        await setDoc(
+          doc(db, 'users', userId, 'fcmTokens', tokenId),
+          tokenData
+        );
+
+        console.log('Token FCM sauvegardé');
+      } else {
+        console.log('Impossible d\'obtenir le token FCM');
+      }
+    } catch (error) {
+      console.error('Erreur sauvegarde token FCM:', error);
+    }
+  }
+
+  /**
+   * Supprime le token FCM lors de la déconnexion
+   */
+  static async removeFCMToken(): Promise<void> {
+    try {
+      if (!auth.currentUser || !this.messaging) return;
+
+      const currentToken = await getToken(this.messaging);
+      if (currentToken) {
+        const userId = auth.currentUser.uid;
+        const tokenId = currentToken.substring(0, 20);
+        
+        // Supprimer de Firestore
+        await deleteDoc(doc(db, 'users', userId, 'fcmTokens', tokenId));
+        
+        // Supprimer de Firebase
+        await deleteToken(this.messaging);
+        
+        console.log('Token FCM supprimé');
+      }
+    } catch (error) {
+      console.error('Erreur suppression token FCM:', error);
+    }
   }
 
   /**
@@ -176,14 +384,20 @@ export class NotificationService {
   }
 
   /**
-   * Demande la permission de notification
+   * Affiche une notification locale
    */
-  static async requestPermission(): Promise<boolean> {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      return permission === 'granted';
+  private static showLocalNotification(payload: any): void {
+    const notification = payload.notification;
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(notification.title, {
+        body: notification.body,
+        icon: '/icon-192x192.png',
+        tag: payload.tag || 'default',
+        requireInteraction: true,
+        data: payload.data
+      });
     }
-    return false;
   }
 
   /**
@@ -218,6 +432,47 @@ export class NotificationService {
     } catch (error) {
       console.error('Erreur récupération notifications:', error);
       return [];
+    }
+  }
+
+  /**
+   * Envoie une notification locale (pour les tests)
+   */
+  static async sendLocalNotification(notification: {
+    title: string;
+    body: string;
+    data?: Record<string, string>;
+  }): Promise<void> {
+    try {
+      console.log('🔔 Envoi notification locale:', notification);
+      
+      // Afficher notification navigateur
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(notification.title, {
+          body: notification.body,
+          icon: '/icon-192x192.png',
+          tag: 'local-notification',
+          requireInteraction: true
+        });
+      }
+      
+      // Sauvegarder dans Firestore si userId disponible
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const notificationData: Omit<NotificationData, 'id' | 'createdAt'> = {
+          title: notification.title,
+          body: notification.body,
+          type: 'signalement_update',
+          userId: userId,
+          read: false,
+          signalementId: notification.data?.signalementId,
+          status: notification.data?.newStatus
+        };
+        
+        await this.saveNotification(userId, notificationData);
+      }
+    } catch (error) {
+      console.error('❌ Erreur envoi notification locale:', error);
     }
   }
 

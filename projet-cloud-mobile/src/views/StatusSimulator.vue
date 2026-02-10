@@ -130,7 +130,7 @@ import {
 import { useRouter } from 'vue-router';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { notificationService } from '../services/notifications.service';
+import { NotificationService } from '../services/notifications.service';
 
 const router = useRouter();
 
@@ -256,7 +256,7 @@ const sendLocalNotification = async (signalementData: any) => {
     };
 
     // Utiliser le service de notification local
-    await notificationService.sendLocalNotification(notification);
+    await NotificationService.sendLocalNotification(notification);
     addLog('Notification locale envoyée!', 'success');
 
   } catch (error) {

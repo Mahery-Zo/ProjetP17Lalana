@@ -98,19 +98,23 @@ const app = createApp(App)
 router.isReady().then(() => {
   app.mount('#app');
   
-  // Initialiser les notifications après le montage de l'app
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      console.log('Utilisateur connecté, initialisation des notifications:', user.uid);
-      try {
-        await NotificationService.requestPermission();
-        await NotificationService.initialize(user.uid);
-      } catch (error) {
-        console.error('Erreur initialisation notifications:', error);
-      }
-    } else {
-      console.log('Utilisateur déconnecté, nettoyage des notifications');
-      NotificationService.cleanup();
+  // Initialiser les notifications FCM quand l'utilisateur est connecté
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    console.log('Utilisateur connecté, initialisation FCM:', user.uid);
+    try {
+      await NotificationService.initializeForUser(user.uid);
+    } catch (error) {
+      console.error('Erreur initialisation FCM:', error);
     }
-  });
+  } else {
+    console.log('Utilisateur déconnecté, nettoyage FCM');
+    try {
+      await NotificationService.removeFCMToken();
+      NotificationService.cleanup();
+    } catch (error) {
+      console.error('Erreur nettoyage FCM:', error);
+    }
+  }
+});
 });
