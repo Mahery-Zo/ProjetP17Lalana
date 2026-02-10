@@ -21,10 +21,12 @@ export default function LoginFirebase() {
     setMsg("");
 
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      console.log("Login result:", result);
       setMsg("✅ Logged in successfully");
       navigate("/dashboard");
     } catch (err) {
+      console.error("Login error:", err);
       setMsg("❌ " + (err?.message || "Login failed"));
     } finally {
       setLoading(false);

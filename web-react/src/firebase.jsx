@@ -11,7 +11,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Only initialize Firebase if we have a valid API key
+let app = null;
+let auth = null;
+let db = null;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    console.log("Firebase initialized successfully");
+  } catch (error) {
+    console.warn("Firebase initialization failed:", error.message);
+  }
+} else {
+  console.warn("Firebase not configured - using local auth only");
+}
+
+export { auth, db };
