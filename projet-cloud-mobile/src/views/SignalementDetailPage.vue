@@ -47,12 +47,12 @@
             <p>{{ signalement.budget.toLocaleString() }} Ar</p>
           </ion-label>
         </ion-item>
-        <ion-item v-if="signalement.niveau !== undefined && signalement.niveau !== null">
+        <!-- <ion-item v-if="signalement.niveau !== undefined && signalement.niveau !== null">
           <ion-label>
             <h2>Niveau</h2>
             <p>{{ signalement.niveau }}/10</p>
           </ion-label>
-        </ion-item>
+        </ion-item> -->
         <ion-item v-if="signalement.entreprise">
           <ion-label>
             <h2>Entreprise</h2>
