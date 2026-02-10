@@ -86,3 +86,5 @@ volumes:
 networks:
   lalana_network:
     driver: bridge
+
+

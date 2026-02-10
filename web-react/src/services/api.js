@@ -128,7 +128,7 @@ export const syncService = {
 
 
 export const pushService = {
-  syncFirebase: async () => {
+  pushFirebase: async () => {
     const response = await api.post('/push/firebase')
     return response.data
   }

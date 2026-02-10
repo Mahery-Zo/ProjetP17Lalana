@@ -17,3 +17,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /var/www/html
 ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Firestore requirements: gRPC + Protobuf
+RUN apt-get update && apt-get install -y \
+    git unzip \
+    autoconf g++ make pkg-config \
+    && pecl install grpc protobuf \
+    && docker-php-ext-enable grpc protobuf \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
