@@ -29,6 +29,12 @@
             <p>{{ signalement.description }}</p>
           </ion-label>
         </ion-item>
+        <ion-item v-if="signalement.createdAt">
+          <ion-label>
+            <h2>Date de création</h2>
+            <p>{{ formatDate(signalement.createdAt) }}</p>
+          </ion-label>
+        </ion-item>
         <ion-item v-if="signalement.surface_m2">
           <ion-label>
             <h2>Surface</h2>
@@ -39,6 +45,12 @@
           <ion-label>
             <h2>Budget</h2>
             <p>{{ signalement.budget.toLocaleString() }} Ar</p>
+          </ion-label>
+        </ion-item>
+        <ion-item v-if="signalement.niveau !== undefined && signalement.niveau !== null">
+          <ion-label>
+            <h2>Niveau</h2>
+            <p>{{ signalement.niveau }}/10</p>
           </ion-label>
         </ion-item>
         <ion-item v-if="signalement.entreprise">
@@ -69,7 +81,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SignalementPhotosService } from '@/services/signalementPhotos.service';
 import type { Signalement } from '@/types/firebase.types';
@@ -131,6 +143,18 @@ const formatStatus = (status: string): string => {
     case 'termine': return 'Terminé';
     default: return status;
   }
+};
+
+const formatDate = (date: Timestamp | Date | undefined): string => {
+  if (!date) return '';
+  const jsDate = date instanceof Timestamp ? date.toDate() : date;
+  return jsDate.toLocaleDateString('fr-FR', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 // Lifecycle
