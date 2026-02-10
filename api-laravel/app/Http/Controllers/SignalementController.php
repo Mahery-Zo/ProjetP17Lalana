@@ -15,8 +15,7 @@ class SignalementController extends Controller
 {
     public function index()
     {
-        // $signalements = Signalement::with(['user', 'entreprise'])->get();
-        $signalements = Signalement::with('user')->get();
+        $signalements = Signalement::with(['user', 'entreprise'])->get();
 
         return response()->json($signalements);
     }
@@ -48,8 +47,7 @@ class SignalementController extends Controller
 
     public function show($id)
     {
-       // $signalement = Signalement::with(['user', 'entreprise'])->findOrFail($id);
-        $signalement = Signalement::with('user')->findOrFail($id);
+        $signalement = Signalement::with(['user', 'entreprise'])->findOrFail($id);
         
         return response()->json($signalement);
     }
@@ -93,7 +91,7 @@ class SignalementController extends Controller
         $signalement = Signalement::findOrFail($id);
         $signalement->update($request->only(['surface_m2', 'budget', 'entreprise_id', 'repair_category']));
 
-        return response()->json($signalement->fresh());
+        return response()->json($signalement->fresh()->load('entreprise'));
     }
 
 

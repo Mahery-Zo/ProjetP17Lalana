@@ -16,6 +16,7 @@ class Signalement extends Model
         'surface_m2',
         'budget',
         'entreprise',
+        'entreprise_id',
         'photo_url',
         'repair_category',
 
@@ -39,5 +40,10 @@ class Signalement extends Model
        public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function entreprise(): BelongsTo
+    {
+        return $this->belongsTo(Entreprise::class, 'entreprise_id');
     }
 }
