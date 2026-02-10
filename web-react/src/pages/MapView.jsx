@@ -39,14 +39,16 @@ export default function MapView() {
 
   const calculateStats = (data) => {
     const total = data.length
-    const nouveau = data.filter(s => s.status === 'nouveau').length
-    const enCours = data.filter(s => s.status === 'en_cours').length
-    const termine = data.filter(s => s.status === 'termine').length
+    const nouveau = data.filter(s => s.current_status === 'nouveau').length
+    const enCours = data.filter(s => s.current_status === 'en_cours').length
+    const termine = data.filter(s => s.current_status === 'termine').length
     
     const totalSurface = data.reduce((sum, s) => sum + (parseFloat(s.surface_m2) || 0), 0)
     const totalBudget = data.reduce((sum, s) => sum + (parseFloat(s.budget) || 0), 0)
     
-    const avancement = total > 0 ? Math.round((termine / total) * 100) : 0
+    // Avancement basé sur les valeurs du backend (nouveau=0, en_cours=50, termine=100)
+    const totalAvancement = data.reduce((sum, s) => sum + (s.avancement || 0), 0)
+    const avancement = total > 0 ? Math.round(totalAvancement / total) : 0
 
     setStats({
       total,
@@ -190,7 +192,7 @@ export default function MapView() {
                 className="marker"
                 style={{
                   ...getMarkerPosition(index, signalements.length),
-                  backgroundColor: getStatusColor(sig.status)
+                  backgroundColor: getStatusColor(sig.current_status)
                 }}
                 onMouseEnter={() => setHoveredSignalement(sig)}
                 onMouseLeave={() => setHoveredSignalement(null)}
@@ -219,9 +221,9 @@ export default function MapView() {
                   <strong>Signalement #{hoveredSignalement.id}</strong>
                   <span 
                     className="tooltip-status"
-                    style={{ backgroundColor: getStatusColor(hoveredSignalement.status) }}
+                    style={{ backgroundColor: getStatusColor(hoveredSignalement.current_status) }}
                   >
-                    {getStatusLabel(hoveredSignalement.status)}
+                    {getStatusLabel(hoveredSignalement.current_status)}
                   </span>
                 </div>
                 

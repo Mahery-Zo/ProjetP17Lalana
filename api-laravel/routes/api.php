@@ -27,6 +27,9 @@ Route::get('/signalements/{id}', [SignalementController::class, 'show']);
 // Public entreprises
 Route::get('/entreprises', [EntrepriseController::class, 'index']);
 
+// Public statistiques (tableau récapitulatif visiteurs + manager)
+Route::get('/statistiques', [SignalementController::class, 'statistics']);
+
 // Firebase import (SANS auth:sanctum)
 Route::middleware(['import.key'])->group(function () {
     Route::get('/firebase/users', [UserController::class, 'getAllUsersForFirebase']);

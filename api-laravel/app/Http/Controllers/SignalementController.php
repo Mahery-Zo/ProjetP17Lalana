@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Signalement;
+use App\Models\HistoriqueStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Kreait\Laravel\Firebase\Facades\Firebase;
@@ -15,8 +16,7 @@ class SignalementController extends Controller
 {
     public function index()
     {
-        // $signalements = Signalement::with(['user', 'entreprise'])->get();
-        $signalements = Signalement::with('user')->get();
+        $signalements = Signalement::with(['user', 'entreprise', 'historiqueStatus'])->get();
 
         return response()->json($signalements);
     }
@@ -40,23 +40,30 @@ class SignalementController extends Controller
             'longitude' => $request->longitude,
             'description' => $request->description,
             'photo_url' => $request->photo_url,
-            'status' => 'nouveau',
         ]);
 
-        return response()->json($signalement, 201);
+        // Insert initial status in historique_status
+        HistoriqueStatus::create([
+            'signalement_id' => $signalement->id,
+            'status' => 'nouveau',
+            'date' => now(),
+        ]);
+
+        return response()->json($signalement->load('historiqueStatus'), 201);
     }
 
     public function show($id)
     {
-       // $signalement = Signalement::with(['user', 'entreprise'])->findOrFail($id);
-        $signalement = Signalement::with('user')->findOrFail($id);
+        $signalement = Signalement::with(['user', 'entreprise', 'historiqueStatus'])->findOrFail($id);
         
         return response()->json($signalement);
     }
 
     public function mySignalements(Request $request)
     {
-        $signalements = Signalement::where('user_id', $request->user()->id)->get();
+        $signalements = Signalement::with('historiqueStatus')
+            ->where('user_id', $request->user()->id)
+            ->get();
         return response()->json($signalements);
     }
 
@@ -71,10 +78,17 @@ class SignalementController extends Controller
         }
 
         $signalement = Signalement::findOrFail($id);
-        $signalement->update(['status' => $request->status,'synced_to_firebase' => false,]);
-        
 
-        return response()->json($signalement);
+        // Insert new entry in historique_status
+        HistoriqueStatus::create([
+            'signalement_id' => $signalement->id,
+            'status' => $request->status,
+            'date' => now(),
+        ]);
+
+        $signalement->update(['synced_to_firebase' => false]);
+
+        return response()->json($signalement->load(['entreprise', 'historiqueStatus']));
     }
 
     public function updateDetails(Request $request, $id)
@@ -92,7 +106,54 @@ class SignalementController extends Controller
         $signalement = Signalement::findOrFail($id);
         $signalement->update($request->only(['surface_m2', 'budget', 'entreprise_id']));
 
-        return response()->json($signalement->load('entreprise'));
+        return response()->json($signalement->load(['entreprise', 'historiqueStatus']));
+    }
+
+    /**
+     * Statistiques globales pour le tableau récapitulatif et le délai moyen.
+     */
+    public function statistics()
+    {
+        $signalements = Signalement::with('historiqueStatus')->get();
+
+        $nbSignalements = $signalements->count();
+        $totalSurface = $signalements->sum('surface_m2');
+        $totalBudget = $signalements->sum('budget');
+
+        // Décompte par status actuel
+        $parStatus = ['nouveau' => 0, 'en_cours' => 0, 'termine' => 0];
+        $totalAvancement = 0;
+        $delais = [];
+
+        foreach ($signalements as $s) {
+            $currentStatus = $s->current_status ?? 'nouveau';
+            if (isset($parStatus[$currentStatus])) {
+                $parStatus[$currentStatus]++;
+            }
+            $totalAvancement += $s->avancement;
+
+            if ($s->delai_traitement !== null) {
+                $delais[] = $s->delai_traitement;
+            }
+        }
+
+        $avancementMoyen = $nbSignalements > 0
+            ? round($totalAvancement / $nbSignalements, 1)
+            : 0;
+
+        $delaiMoyen = count($delais) > 0
+            ? round(array_sum($delais) / count($delais), 1)
+            : null;
+
+        return response()->json([
+            'nb_signalements' => $nbSignalements,
+            'total_surface_m2' => $totalSurface,
+            'total_budget' => $totalBudget,
+            'avancement_moyen' => $avancementMoyen,
+            'delai_moyen_jours' => $delaiMoyen,
+            'par_status' => $parStatus,
+            'nb_termines' => $parStatus['termine'],
+        ]);
     }
 
 
@@ -286,12 +347,18 @@ public function syncFirebase(Request $request)
                     'longitude' => $longitude,
                     'description' => $data['description'] ?? null,
                     'photo_url' => $data['photos'] ?? null,
-                    'status' => $data['status'] ?? 'nouveau',
 
                     'firebase_id' => (string)$firebaseId,
                     'source' => 'firebase',
                     'synced_at' => now(),
                     'synced_to_firebase' => false,
+                ]);
+
+                // Insert status in historique_status
+                HistoriqueStatus::create([
+                    'signalement_id' => $signalement->id,
+                    'status' => $data['status'] ?? 'nouveau',
+                    'date' => now(),
                 ]);
 
                 // ACK back to Firestore
@@ -343,7 +410,7 @@ public function pushToFirebase()
                 'latitude' => (float) $s->latitude,
                 'longitude' => (float) $s->longitude,
                 'description' => $s->description,
-                'status' => $s->status,
+                'status' => $s->current_status,
                 'photo_url' => $s->photo_url,
                 'source' => $s->source,
                 'updated_at' => $s->updated_at->toISOString(),

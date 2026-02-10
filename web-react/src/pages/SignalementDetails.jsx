@@ -40,7 +40,7 @@ export default function SignalementDetails() {
     try {
       const data = await signalementService.getById(id)
       setSignalement(data)
-      setStatus(data.status || 'nouveau')
+      setStatus(data.current_status || 'nouveau')
       setSurfaceM2(data.surface_m2 || '')
       setBudget(data.budget || '')
       setEntrepriseId(data.entreprise_id || '')
@@ -165,11 +165,24 @@ export default function SignalementDetails() {
               <span className="label">Statut:</span>
               <span 
                 className="status-badge" 
-                style={{ backgroundColor: getStatusColor(signalement.status) }}
+                style={{ backgroundColor: getStatusColor(signalement.current_status) }}
               >
-                {getStatusLabel(signalement.status)}
+                {getStatusLabel(signalement.current_status)}
               </span>
             </div>
+            <div className="info-row">
+              <span className="label">Avancement:</span>
+              <span>{signalement.avancement}%</span>
+              <div style={{ width: '100px', height: '8px', backgroundColor: '#e9ecef', borderRadius: '4px', display: 'inline-block', marginLeft: '8px' }}>
+                <div style={{ width: `${signalement.avancement}%`, height: '100%', backgroundColor: '#28a745', borderRadius: '4px' }}></div>
+              </div>
+            </div>
+            {signalement.delai_traitement !== null && (
+              <div className="info-row">
+                <span className="label">Délai de traitement:</span>
+                <span>{signalement.delai_traitement} jours</span>
+              </div>
+            )}
             <div className="info-row">
               <span className="label">Description:</span>
               <span>{signalement.description || 'Aucune description'}</span>
@@ -213,6 +226,38 @@ export default function SignalementDetails() {
             </div>
           </div>
         </div>
+
+        {/* Historique des changements de status */}
+        {signalement.historique_status && signalement.historique_status.length > 0 && (
+          <div className="card" style={{ marginTop: '20px' }}>
+            <h3>Historique des statuts</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #dee2e6' }}>Statut</th>
+                  <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #dee2e6' }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {signalement.historique_status.map((h, i) => (
+                  <tr key={h.id || i}>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                      <span
+                        className="status-badge"
+                        style={{ backgroundColor: getStatusColor(h.status) }}
+                      >
+                        {getStatusLabel(h.status)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                      {new Date(h.date).toLocaleString('fr-FR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Formulaires de mise à jour (Manager uniquement) */}
         {user?.role === 'manager' && (

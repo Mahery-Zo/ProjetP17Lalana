@@ -134,6 +134,12 @@ export const pushService = {
   }
 }
 
+export const statisticsService = {
+  getStats: async () => {
+    const response = await api.get('/statistiques')
+    return response.data
+  }
+}
 
 
 export default api
