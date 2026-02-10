@@ -51,7 +51,7 @@ export const addSignalement = async (data: Omit<Signalement, 'id' | 'userId' | '
   const signalement: Omit<Signalement, 'id'> = {
     ...data,
     userId: auth.currentUser.uid,
-    synced: true,
+    synced: false,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
   };
