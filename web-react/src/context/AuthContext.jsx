@@ -49,30 +49,41 @@ export function AuthProvider({ children }) {
       if (savedSource === "local") {
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
-        if (token && savedUser) {
-          setUser(JSON.parse(savedUser));
-          setSource("local");
-          setLoading(false);
-          return; // stop here, no firebase listener needed
+        if (token && savedUser && savedUser !== "undefined") {
+          try {
+            setUser(JSON.parse(savedUser));
+            setSource("local");
+            setLoading(false);
+            return; // stop here, no firebase listener needed
+          } catch (error) {
+            console.error("Error parsing user data:", error);
+            clearLocalSession();
+          }
         }
       }
 
-      // Otherwise listen to Firebase once
-      unsub = onAuthStateChanged(auth, (fbUser) => {
-        if (fbUser) {
-          setFirebaseSession(fbUser);
-        } else {
-          // no firebase user
-          // do not erase local session here; only clear on logout
-          if (localStorage.getItem("auth_source") === "firebase") {
-            setUser(null);
-            setSource(null);
+      // Otherwise listen to Firebase once (only if Firebase is configured)
+      if (auth) {
+        unsub = onAuthStateChanged(auth, (fbUser) => {
+          if (fbUser) {
+            setFirebaseSession(fbUser);
+          } else {
+            // no firebase user
+            // do not erase local session here; only clear on logout
+            if (localStorage.getItem("auth_source") === "firebase") {
+              setUser(null);
+              setSource(null);
+            }
           }
-        }
+          setLoading(false);
+        });
+      } else {
+        // No Firebase configured, just finish loading
         setLoading(false);
-      });
+      }
     } catch (e) {
       // fallback safety
+      console.error("Auth initialization error:", e);
       setLoading(false);
     }
 
@@ -98,17 +109,19 @@ export function AuthProvider({ children }) {
 
   //  Firebase login
   const loginFirebase = async (email, password) => {
+    if (!auth) {
+      throw new Error("Firebase not configured");
+    }
     const res = await signInWithEmailAndPassword(auth, email.trim(), password);
     // const token = await res.user.getIdToken();
     localStorage.setItem("auth_source", "firebase");
-    localStorage.setItem("auth_source", "firebase");
-     const data = await authService.login(email, password)
+    const data = await authService.login(email, password);
     
-    setUser({ id: res.user.uid, email: res.user.email , role: data.user.role});
-     setLocalSession(data);
+    setUser({ id: res.user.uid, email: res.user.email, role: data.user.role });
+    setLocalSession(data);
     
-  // localStorage.setItem("token", data.token);
-  // localStorage.setItem("user", JSON.stringify(data.user));
+    // localStorage.setItem("token", data.token);
+    // localStorage.setItem("user", JSON.stringify(data.user));
    
     setSource("firebase");
     return res.user;
@@ -116,6 +129,11 @@ export function AuthProvider({ children }) {
 
   //  Smart login: try Firebase first, if NETWORK error → fallback local
   const login = async (email, password) => {
+    // If Firebase not configured, use local auth directly
+    if (!auth) {
+      return loginLocal(email, password);
+    }
+
     try {
       return await loginFirebase(email, password);
     } catch (err) {
@@ -132,7 +150,6 @@ export function AuthProvider({ children }) {
       if (isNetwork) {
         return loginLocal(email, password);
       }
-     
 
       // Real auth error (wrong password, user not found...) → don't fallback
       throw err;
@@ -155,6 +172,9 @@ export function AuthProvider({ children }) {
 
   //  Firebase register
   const registerFirebase = async (email, password) => {
+    if (!auth) {
+      throw new Error("Firebase not configured");
+    }
     const res = await createUserWithEmailAndPassword(auth, email.trim(), password);
     localStorage.setItem("auth_source", "firebase");
     setUser({ id: res.user.uid, email: res.user.email });
@@ -172,7 +192,7 @@ export function AuthProvider({ children }) {
     try {
       if (source === "local") {
         await authService.logout();
-      } else if (source === "firebase") {
+      } else if (source === "firebase" && auth) {
         await signOut(auth);
       }
     } finally {

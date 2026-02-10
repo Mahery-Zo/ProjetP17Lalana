@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
              'import.key' => \App\Http\Middleware\ImportKeyMiddleware::class,
         ]);
+        
+        // Désactiver le rate limiting pour le développement
+        $middleware->api(remove: [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

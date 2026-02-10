@@ -17,9 +17,11 @@ export default function SignalementDetails() {
   
   // Form states
   const [status, setStatus] = useState('')
+  const [statusDate, setStatusDate] = useState('')
   const [surfaceM2, setSurfaceM2] = useState('')
   const [budget, setBudget] = useState('')
   const [entrepriseId, setEntrepriseId] = useState('')
+  const [repairCategory, setRepairCategory] = useState('')
   const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
@@ -40,10 +42,11 @@ export default function SignalementDetails() {
     try {
       const data = await signalementService.getById(id)
       setSignalement(data)
-      setStatus(data.status || 'nouveau')
+      setStatus(data.current_status || 'nouveau')
       setSurfaceM2(data.surface_m2 || '')
       setBudget(data.budget || '')
       setEntrepriseId(data.entreprise_id || '')
+      setRepairCategory(data.repair_category || '')
     } catch (err) {
       setError('Erreur de chargement du signalement')
     } finally {
@@ -57,9 +60,16 @@ export default function SignalementDetails() {
     setError('')
     setSuccess('')
 
+    if (!statusDate) {
+      setError('Veuillez spécifier la date')
+      setUpdating(false)
+      return
+    }
+
     try {
-      await signalementService.updateStatus(id, status)
+      await signalementService.updateStatus(id, status, statusDate)
       setSuccess('Statut mis à jour avec succès')
+      setStatusDate('')
       loadSignalement()
     } catch (err) {
       setError('Erreur lors de la mise à jour du statut')
@@ -78,7 +88,8 @@ export default function SignalementDetails() {
       await signalementService.updateDetails(id, {
         surface_m2: surfaceM2 ? parseFloat(surfaceM2) : null,
         budget: budget ? parseFloat(budget) : null,
-        entreprise_id: entrepriseId || null
+        entreprise_id: entrepriseId || null,
+        repair_category: repairCategory ? parseInt(repairCategory) : null
       })
       setSuccess('Détails mis à jour avec succès')
       loadSignalement()
@@ -165,11 +176,24 @@ export default function SignalementDetails() {
               <span className="label">Statut:</span>
               <span 
                 className="status-badge" 
-                style={{ backgroundColor: getStatusColor(signalement.status) }}
+                style={{ backgroundColor: getStatusColor(signalement.current_status) }}
               >
-                {getStatusLabel(signalement.status)}
+                {getStatusLabel(signalement.current_status)}
               </span>
             </div>
+            <div className="info-row">
+              <span className="label">Avancement:</span>
+              <span>{signalement.avancement}%</span>
+              <div style={{ width: '100px', height: '8px', backgroundColor: '#e9ecef', borderRadius: '4px', display: 'inline-block', marginLeft: '8px' }}>
+                <div style={{ width: `${signalement.avancement}%`, height: '100%', backgroundColor: '#28a745', borderRadius: '4px' }}></div>
+              </div>
+            </div>
+            {signalement.delai_traitement !== null && (
+              <div className="info-row">
+                <span className="label">Délai de traitement:</span>
+                <span>{signalement.delai_traitement} jours</span>
+              </div>
+            )}
             <div className="info-row">
               <span className="label">Description:</span>
               <span>{signalement.description || 'Aucune description'}</span>
@@ -211,8 +235,44 @@ export default function SignalementDetails() {
               <span className="label">Entreprise:</span>
               <span>{signalement.entreprise?.nom || 'Non renseigné'}</span>
             </div>
+            <div className="info-row">
+              <span className="label">Catégorie de réparation:</span>
+              <span>{signalement.repair_category ? `${signalement.repair_category}/10` : 'Non renseigné'}</span>
+            </div>
           </div>
         </div>
+
+        {/* Historique des changements de status */}
+        {signalement.historique_status && signalement.historique_status.length > 0 && (
+          <div className="card" style={{ marginTop: '20px' }}>
+            <h3>Historique des statuts</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #dee2e6' }}>Statut</th>
+                  <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #dee2e6' }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {signalement.historique_status.map((h, i) => (
+                  <tr key={h.id || i}>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                      <span
+                        className="status-badge"
+                        style={{ backgroundColor: getStatusColor(h.status) }}
+                      >
+                        {getStatusLabel(h.status)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                      {new Date(h.date).toLocaleString('fr-FR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Formulaires de mise à jour (Manager uniquement) */}
         {user?.role === 'manager' && (
@@ -231,6 +291,15 @@ export default function SignalementDetails() {
                     <option value="en_cours">En cours</option>
                     <option value="termine">Terminé</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Date</label>
+                  <input
+                    type="datetime-local"
+                    value={statusDate}
+                    onChange={(e) => setStatusDate(e.target.value)}
+                    disabled={updating}
+                  />
                 </div>
                 <button type="submit" disabled={updating} className="btn-submit">
                   {updating ? 'Mise à jour...' : 'Mettre à jour le statut'}
@@ -279,6 +348,25 @@ export default function SignalementDetails() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Catégorie de réparation (1-10)</label>
+                  <div className="radio-group">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <label key={num} className="radio-label">
+                        <input
+                          type="radio"
+                          name="repair_category"
+                          value={num}
+                          checked={repairCategory === num.toString()}
+                          onChange={(e) => setRepairCategory(e.target.value)}
+                          disabled={updating}
+                        />
+                        <span>{num}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <button type="submit" disabled={updating} className="btn-submit">

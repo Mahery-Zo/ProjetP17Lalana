@@ -70,8 +70,8 @@ export default function Signalements() {
                 onClick={() => navigate(`/signalements/${sig.id}`)}
               >
                 <div className="card-header">
-                  <span className={`status status-${sig.status}`}>
-                    {sig.status}
+                  <span className={`status status-${sig.current_status}`}>
+                    {sig.current_status}
                   </span>
                   <span className="date">
                     {new Date(sig.created_at).toLocaleDateString('fr-FR')}

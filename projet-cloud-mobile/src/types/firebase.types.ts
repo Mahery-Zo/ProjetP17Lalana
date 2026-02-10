@@ -12,6 +12,7 @@ export interface Signalement {
   entrepriseId?: string;
   entreprise?: string;
   photoUrl?: string;
+  photos?: string[];
   synced: boolean;
   createdAt: Timestamp | Date;
   updatedAt?: Timestamp | Date;

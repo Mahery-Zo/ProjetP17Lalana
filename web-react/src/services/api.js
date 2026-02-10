@@ -1,9 +1,17 @@
 import axios from 'axios'
 
 const API_URL = 'http://localhost:8000/api'
+const API_NODE_URL = 'http://localhost:5050/api'
 
 const api = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+const users_api = axios.create({
+  baseURL: API_NODE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -91,8 +99,8 @@ export const signalementService = {
     return response.data
   },
 
-  updateStatus: async (id, status) => {
-    const response = await api.put(`/signalements/${id}/status`, { status })
+  updateStatus: async (id, status, date) => {
+    const response = await api.put(`/signalements/${id}/status`, { status, date })
     return response.data
   },
 
@@ -133,6 +141,33 @@ export const pushService = {
     return response.data
   }
 }
+
+export const pushUserService = {
+  pushUserFirebase: async () => {
+  const triggerKey = import.meta.env.VITE_NODE_TRIGGER_KEY;
+
+  return axios.post(
+    "http://localhost:5050/api/import/users/from-postgres",
+    {},
+    {
+      headers: {
+        "X-TRIGGER-KEY": triggerKey,
+        Accept: "application/json",
+      },
+    }
+  );
+}
+}
+
+export const statisticsService = {
+  getStats: async () => {
+    const response = await api.get('/statistiques')
+    return response.data
+  }
+}
+
+
+
 
 
 

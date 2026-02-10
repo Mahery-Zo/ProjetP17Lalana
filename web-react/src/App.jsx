@@ -12,7 +12,14 @@ import MapView from "./pages/MapView";
 
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  
+  console.log("PrivateRoute - user:", user, "loading:", loading)
+  
+  if (loading) {
+    return <div>Chargement...</div>
+  }
+  
   return user ? children : <Navigate to="/login" />
 }
 

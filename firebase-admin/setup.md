@@ -55,6 +55,7 @@ cd firebase-admin
 npm init -y
 npm i express axios firebase-admin dotenv
 
+npm install cors
 
 
 

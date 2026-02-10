@@ -26,7 +26,7 @@
             <ion-textarea 
               readonly 
               :value="fcmToken" 
-              rows="3"
+              :rows="3"
               style="font-size: 12px; font-family: monospace;">
             </ion-textarea>
           </ion-item>
@@ -120,7 +120,7 @@ import {
   IonList,
   toastController
 } from '@ionic/vue';
-import { notificationService } from '@/services/notifications.service';
+import { NotificationService } from '@/services/notifications.service';
 import { getFCMToken } from '@/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { getFunctions } from 'firebase/functions';
@@ -148,7 +148,7 @@ async function initializeNotifications() {
   loading.value = true;
   try {
     addLog('Initialisation des notifications...');
-    await notificationService.initialize();
+    await NotificationService.initialize();
     
     // Obtenir le token FCM
     const token = await getFCMToken();
@@ -184,7 +184,11 @@ async function sendTestNotification() {
   loading.value = true;
   try {
     addLog('Envoi notification de test locale...');
-    await notificationService.sendTestNotification();
+    await NotificationService.sendLocalNotification({
+      title: 'Test de notification',
+      body: 'Ceci est une notification de test depuis Lalana',
+      data: { type: 'test' }
+    });
     addLog('Notification de test envoyée');
     
     const toast = await toastController.create({
