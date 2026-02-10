@@ -17,6 +17,7 @@ export default function SignalementDetails() {
   
   // Form states
   const [status, setStatus] = useState('')
+  const [statusDate, setStatusDate] = useState('')
   const [surfaceM2, setSurfaceM2] = useState('')
   const [budget, setBudget] = useState('')
   const [entrepriseId, setEntrepriseId] = useState('')
@@ -57,9 +58,16 @@ export default function SignalementDetails() {
     setError('')
     setSuccess('')
 
+    if (!statusDate) {
+      setError('Veuillez spécifier la date')
+      setUpdating(false)
+      return
+    }
+
     try {
-      await signalementService.updateStatus(id, status)
+      await signalementService.updateStatus(id, status, statusDate)
       setSuccess('Statut mis à jour avec succès')
+      setStatusDate('')
       loadSignalement()
     } catch (err) {
       setError('Erreur lors de la mise à jour du statut')
@@ -276,6 +284,15 @@ export default function SignalementDetails() {
                     <option value="en_cours">En cours</option>
                     <option value="termine">Terminé</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Date</label>
+                  <input
+                    type="datetime-local"
+                    value={statusDate}
+                    onChange={(e) => setStatusDate(e.target.value)}
+                    disabled={updating}
+                  />
                 </div>
                 <button type="submit" disabled={updating} className="btn-submit">
                   {updating ? 'Mise à jour...' : 'Mettre à jour le statut'}

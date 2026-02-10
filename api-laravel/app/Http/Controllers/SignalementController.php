@@ -71,6 +71,7 @@ class SignalementController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:nouveau,en_cours,termine',
+            'date' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -83,7 +84,7 @@ class SignalementController extends Controller
         HistoriqueStatus::create([
             'signalement_id' => $signalement->id,
             'status' => $request->status,
-            'date' => now(),
+            'date' => $request->date,
         ]);
 
         $signalement->update(['synced_to_firebase' => false]);
