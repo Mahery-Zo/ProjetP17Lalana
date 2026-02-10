@@ -47,5 +47,26 @@ docker compose exec app php artisan migrate
 
 
 
-
 i mean not push and pool signialment but push and pull users 
+
+
+# fix
+cd firebase-admin
+npm init -y
+npm i express axios firebase-admin dotenv
+
+
+
+
+# Test
+
+$triggerKey = "trigger-super-secret"
+
+Invoke-RestMethod -Method Post `
+  -Uri "http://localhost:5050/api/import/users/from-postgres" `
+  -Headers @{
+    "X-TRIGGER-KEY" = $triggerKey
+    "Accept" = "application/json"
+  }
+
+

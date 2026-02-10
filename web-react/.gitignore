@@ -1,42 +1,52 @@
-# Dependencies
-node_modules/
-/.pnp
-.pnp.js
+# Laravel
+api-laravel/vendor/
+api-laravel/node_modules/
+api-laravel/.env
+api-laravel/storage/*.key
+api-laravel/storage/app/*
+api-laravel/storage/framework/cache/*
+api-laravel/storage/framework/sessions/*
+api-laravel/storage/framework/views/*
+api-laravel/storage/logs/*
+api-laravel/bootstrap/cache/*
 
-# Testing
-/coverage
+# Mobile Ionic
+mobile-ionic/node_modules/
+mobile-ionic/dist/
+mobile-ionic/android/
+mobile-ionic/.env
+mobile-ionic/vendor/
+mobile-ionic/ios/
+mobile-ionic/.capacitor/
 
-# Production
-/build
-/dist
+# Web React
+web-react/node_modules/
+web-react/dist/
+web-react/build/
+web-react/.env
 
-# Misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Firebase / Cloud Mobile
+projet-cloud-mobile/firebase-functions/node_modules/
+projet-cloud-mobile/node_modules/
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Vite
-*.local
+# Docker
+postgres_data/
+tile_data/
+vendor/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS
+.DS_Store
 Thumbs.db
+
+# Firebase
+firebase-credentials.json
+
+# General node_modules (catch-all)
+**/node_modules/
+**/vendor/

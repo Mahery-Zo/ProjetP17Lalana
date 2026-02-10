@@ -37,10 +37,11 @@ services:
     image: node:20-alpine
     working_dir: /app/firebase-admin
     volumes:
-      - ./:/app
+      - ./firebase-admin:/app/firebase-admin
+      - firebase_node_modules:/app/firebase-admin/node_modules
     env_file:
       - ./firebase-admin/.env
-    command: ["node", "server.js"]
+    command: sh -lc "npm install && node server.js"
     ports:
       - "5050:5050"
     depends_on:
@@ -80,7 +81,10 @@ volumes:
   postgres_data:
   tile_data:
   vendor:
+  firebase_node_modules:
 
 networks:
   lalana_network:
     driver: bridge
+
+

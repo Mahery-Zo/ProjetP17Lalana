@@ -9,13 +9,16 @@ api-laravel/storage/framework/sessions/*
 api-laravel/storage/framework/views/*
 api-laravel/storage/logs/*
 api-laravel/bootstrap/cache/*
+firebase-admin/node_modules/
+/vendor/
 
 vendor/
 # Mobile Ionic
 mobile-ionic/node_modules/
 mobile-ionic/dist/
-mobile-ionic/.env
 mobile-ionic/android/
+mobile-ionic/.env
+mobile-ionic/vendor/
 mobile-ionic/ios/
 mobile-ionic/.capacitor/
 
@@ -32,7 +35,7 @@ projet-cloud-mobile/node_modules/
 # Docker
 postgres_data/
 tile_data/
-
+vendor/
 # IDE
 .vscode/
 .idea/
@@ -48,4 +51,6 @@ Thumbs.db
 firebase-credentials.json
 
 # General node_modules (catch-all)
+**/node_modules/
+**/vendor/
 **/node_modules/

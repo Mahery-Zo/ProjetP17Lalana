@@ -30,7 +30,6 @@ Route::get('/entreprises', [EntrepriseController::class, 'index']);
 // Firebase import (SANS auth:sanctum)
 Route::middleware(['import.key'])->group(function () {
     Route::get('/firebase/users', [UserController::class, 'getAllUsersForFirebase']);
-    Route::get('/firebase/users', [UserController::class, 'pushUsersToFirebase']);
 });
 
 
@@ -47,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Manager only routes
     Route::middleware('role:manager')->group(function () {
         Route::post('/sync/firebase', [SignalementController::class, 'syncFirebase']);
+        Route::post('/push/firebase', [SignalementController::class, 'pushToFirebase']);
         Route::get('/users/blocked', [UserController::class, 'blockedUsers']);
         Route::post('/users/{id}/unblock', [UserController::class, 'unblock']);
         Route::put('/signalements/{id}/status', [SignalementController::class, 'updateStatus']);

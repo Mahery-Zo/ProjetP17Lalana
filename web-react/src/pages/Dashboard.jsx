@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { syncService } from '../services/api'
+import { syncService, pushService } from '../services/api'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -16,7 +16,9 @@ export default function Dashboard() {
   const handleSync = async () => {
   try {
     const res = await syncService.syncFirebase()
+    const res2 = await pushService.pushFirebase()
     alert(res.message || 'Synchronisation terminée')
+    alert(res2.message || 'Push terminée')
   } catch (err) {
     alert('Erreur lors de la synchronisation')
     console.error(err)
@@ -60,19 +62,18 @@ export default function Dashboard() {
           </button>
           
           {user?.role === 'manager' && (
-            <button 
+            <><button
               onClick={() => navigate('/users')}
               className="btn-primary"
             >
               Gérer les utilisateurs
-            </button>
+            </button><button onClick={handleSync}>
+                🔄 Synchroniser Firebase
+              </button></>
              
           )}
           
          
-          <button onClick={handleSync}>
-                🔄 Synchroniser Firebase
-               </button>
           
         </div>
       </div>
