@@ -257,6 +257,15 @@ export default function MapView() {
                   </div>
                   
                   <div className="tooltip-row">
+                    <span className="tooltip-label">🔧 Catégorie:</span>
+                    <span>
+                      {hoveredSignalement.repair_category 
+                        ? `${hoveredSignalement.repair_category}/10` 
+                        : 'Non renseigné'}
+                    </span>
+                  </div>
+                  
+                  <div className="tooltip-row">
                     <span className="tooltip-label">📍 Position:</span>
                     <span>{hoveredSignalement.latitude}, {hoveredSignalement.longitude}</span>
                   </div>
