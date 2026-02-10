@@ -99,8 +99,8 @@ export const signalementService = {
     return response.data
   },
 
-  updateStatus: async (id, status) => {
-    const response = await api.put(`/signalements/${id}/status`, { status })
+  updateStatus: async (id, status, date) => {
+    const response = await api.put(`/signalements/${id}/status`, { status, date })
     return response.data
   },
 
