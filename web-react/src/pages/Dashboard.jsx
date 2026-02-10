@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { syncService, pushService, pushUserService } from '../services/api'
-import { syncService, pushService, statisticsService } from '../services/api'
+import { syncService, pushService, pushUserService ,statisticsService } from '../services/api'
+
 import './Dashboard.css'
 
 export default function Dashboard() {
