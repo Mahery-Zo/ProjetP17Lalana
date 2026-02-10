@@ -93,7 +93,7 @@ class SignalementController extends Controller
         $signalement = Signalement::findOrFail($id);
         $signalement->update($request->only(['surface_m2', 'budget', 'entreprise_id', 'repair_category']));
 
-        return response()->json($signalement->load('entreprise'));
+        return response()->json($signalement->fresh());
     }
 
 
