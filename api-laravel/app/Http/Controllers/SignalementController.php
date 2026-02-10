@@ -285,7 +285,7 @@ public function syncFirebase(Request $request)
                     'latitude' => $latitude,
                     'longitude' => $longitude,
                     'description' => $data['description'] ?? null,
-                    'photo_url' => $data['photo_url'] ?? null,
+                    'photo_url' => $data['photos'] ?? null,
                     'status' => $data['status'] ?? 'nouveau',
 
                     'firebase_id' => (string)$firebaseId,
