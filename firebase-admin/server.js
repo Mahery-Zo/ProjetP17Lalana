@@ -3,6 +3,19 @@ import axios from "axios";
 import admin from "firebase-admin";
 import fs from "fs";
 import "dotenv/config";
+import cors from "cors";
+
+const app = express();
+app.use(express.json({ limit: "5mb" }));
+
+const corsOptions = {
+  origin: ["http://localhost:3000"],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-TRIGGER-KEY", "Accept"],
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // ----------------------------
 // Firebase Admin init
@@ -17,20 +30,12 @@ admin.initializeApp({
 // Config (.env)
 // ----------------------------
 const PORT = Number(process.env.PORT || 5050);
-
-// In Docker, use service name (web). Local fallback is optional.
 const API_URL = process.env.API_URL || "http://web";
 
-// Endpoint that returns paginated users to import into Firebase
 const API_BASE = `${API_URL}/api/firebase/users`;
-
-// Endpoint that receives users pulled from Firebase to upsert into Postgres
 const POSTGRES_SYNC_ENDPOINT = `${API_URL}/api/firebase/users/sync-from-firebase`;
 
-// Secret key to protect YOUR Node API endpoints (caller -> Node API)
 const NODE_TRIGGER_KEY = process.env.NODE_TRIGGER_KEY;
-
-// Key used when Node calls your existing API (Node -> existing API)
 const FIREBASE_IMPORT_KEY = process.env.FIREBASE_IMPORT_KEY;
 
 const PER_PAGE = Number(process.env.PER_PAGE || 1000);
@@ -80,25 +85,17 @@ async function fetchPage(page) {
 }
 
 // ----------------------------
-// Express app
+// Routes
 // ----------------------------
-const app = express();
-app.use(express.json({ limit: "5mb" }));
-
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-/**
- * POST /api/import/users/from-postgres
- * Pull from API_BASE paginated and import into Firebase Auth.
- * Re-runs: treat "already exists" as SKIPPED (not a failure).
- */
 app.post("/api/import/users/from-postgres", requireTriggerKey, async (req, res) => {
   try {
     let page = 1;
 
-    let totalImported = 0;          // imported this run
-    let skippedAlreadyExists = 0;   // uid/email already exists
-    let hardFailures = 0;           // real errors
+    let totalImported = 0;
+    let skippedAlreadyExists = 0;
+    let hardFailures = 0;
     let batches = 0;
 
     const ALREADY_EXISTS_CODES = new Set([
@@ -196,10 +193,6 @@ app.post("/api/import/users/from-postgres", requireTriggerKey, async (req, res) 
   }
 });
 
-/**
- * POST /api/sync/users/from-firebase
- * Pull users from Firebase Auth and POST to POSTGRES_SYNC_ENDPOINT.
- */
 app.post("/api/sync/users/from-firebase", requireTriggerKey, async (req, res) => {
   try {
     let nextPageToken = undefined;
@@ -235,11 +228,7 @@ app.post("/api/sync/users/from-firebase", requireTriggerKey, async (req, res) =>
       nextPageToken = r.pageToken;
     } while (nextPageToken);
 
-    return res.json({
-      message: "Firebase ➜ Postgres sync done",
-      total,
-      batches,
-    });
+    return res.json({ message: "Firebase ➜ Postgres sync done", total, batches });
   } catch (err) {
     return res.status(500).json({
       message: "Sync failed",
@@ -250,7 +239,9 @@ app.post("/api/sync/users/from-firebase", requireTriggerKey, async (req, res) =>
   }
 });
 
-// IMPORTANT for Docker: listen on 0.0.0.0 (not 127.0.0.1)
+// ----------------------------
+// Listen
+// ----------------------------
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Node API running on 0.0.0.0:${PORT}`);
   console.log("API_URL =", API_URL);

@@ -280,19 +280,27 @@ public function syncFirebase(Request $request)
             DB::transaction(function () use (
                 $firebaseId, $data, $request, $incoming, &$imported, $latitude, $longitude
             ) {
+                    if (isset($data['photos']) && is_array($data['photos'])) {
+                        if (empty($data['photos'])) {
+                            $data['photos'] = null; // or '[]' as JSON string
+                        } else {
+                            $data['photos'] = json_encode($data['photos']);
+                        }
+                    }
+
                 $signalement = Signalement::create([
                     'user_id' => $request->user()->id,
                     'latitude' => $latitude,
                     'longitude' => $longitude,
                     'description' => $data['description'] ?? null,
-                    'photo_url' => $data['photos'] ?? null,
+                    'photo_url' => $data['photos'],
                     'status' => $data['status'] ?? 'nouveau',
-
-                    'firebase_id' => (string)$firebaseId,
+                    'surface_m2' => $data['surface_m2'] ?? null,
+                    'firebase_id' => (string) $firebaseId,
                     'source' => 'firebase',
                     'synced_at' => now(),
                     'synced_to_firebase' => false,
-                ]);
+            ]);
 
                 // ACK back to Firestore
                 $incoming->document($firebaseId)->update([
@@ -344,7 +352,9 @@ public function pushToFirebase()
                 'longitude' => (float) $s->longitude,
                 'description' => $s->description,
                 'status' => $s->status,
-                'photo_url' => $s->photo_url,
+                'surface_m2' => $s->surface_m2,
+                'budget' => $s->budget,
+                'entreprise' => $s->entreprise,
                 'source' => $s->source,
                 'updated_at' => $s->updated_at->toISOString(),
             ], ['merge' => true]);

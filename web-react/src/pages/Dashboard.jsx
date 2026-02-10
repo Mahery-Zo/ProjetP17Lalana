@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { syncService, pushService } from '../services/api'
+import { syncService, pushService, pushUserService } from '../services/api'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -14,16 +14,18 @@ export default function Dashboard() {
 
 
   const handleSync = async () => {
-  try {
-    const res = await syncService.syncFirebase()
-    const res2 = await pushService.pushFirebase()
-    alert(res.message || 'Synchronisation terminée')
-    alert(res2.message || 'Push terminée')
-  } catch (err) {
-    alert('Erreur lors de la synchronisation')
-    console.error(err)
+    try {
+      const res = await syncService.syncFirebase()
+      const res2 = await pushService.pushFirebase()
+      const res3 = await pushUserService.pushUserFirebase()
+      alert(res.message || 'Synchronisation terminée')
+      alert(res2.message || 'Push terminée')
+      alert(res3.message || 'Push terminée')
+    } catch (err) {
+      alert('Erreur lors de la synchronisation')
+      console.error(err)
+    }
   }
-}
 
   return (
     <div className="dashboard">
@@ -47,20 +49,20 @@ export default function Dashboard() {
         </div>
 
         <div className="actions">
-          <button 
+          <button
             onClick={() => navigate('/map')}
             className="btn-primary"
           >
             🗺️ Voir la carte
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/signalements')}
             className="btn-primary"
           >
             Voir les signalements
           </button>
-          
+
           {user?.role === 'manager' && (
             <><button
               onClick={() => navigate('/users')}
@@ -70,14 +72,14 @@ export default function Dashboard() {
             </button><button onClick={handleSync}>
                 🔄 Synchroniser Firebase
               </button></>
-             
+
           )}
-          
-         
-          
+
+
+
         </div>
       </div>
     </div>
   )
-  }
+}
 
