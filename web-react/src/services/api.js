@@ -91,8 +91,8 @@ export const signalementService = {
     return response.data
   },
 
-  updateStatus: async (id, status) => {
-    const response = await api.put(`/signalements/${id}/status`, { status })
+  updateStatus: async (id, status, date) => {
+    const response = await api.put(`/signalements/${id}/status`, { status, date })
     return response.data
   },
 
@@ -134,6 +134,12 @@ export const pushService = {
   }
 }
 
+export const statisticsService = {
+  getStats: async () => {
+    const response = await api.get('/statistiques')
+    return response.data
+  }
+}
 
 
 export default api
