@@ -17,6 +17,7 @@ class Signalement extends Model
         'budget',
         'entreprise',
         'photo_url',
+        'repair_category',
 
         // sync fields
         'firebase_id',
@@ -30,6 +31,7 @@ class Signalement extends Model
         'longitude' => 'decimal:8',
         'surface_m2' => 'decimal:2',
         'budget' => 'decimal:2',
+        'repair_category' => 'integer',
         'synced_to_firebase' => 'boolean',
         'synced_at' => 'datetime',
     ];

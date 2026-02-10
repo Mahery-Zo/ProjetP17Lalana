@@ -20,6 +20,7 @@ export default function SignalementDetails() {
   const [surfaceM2, setSurfaceM2] = useState('')
   const [budget, setBudget] = useState('')
   const [entrepriseId, setEntrepriseId] = useState('')
+  const [repairCategory, setRepairCategory] = useState('')
   const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function SignalementDetails() {
       setSurfaceM2(data.surface_m2 || '')
       setBudget(data.budget || '')
       setEntrepriseId(data.entreprise_id || '')
+      setRepairCategory(data.repair_category || '')
     } catch (err) {
       setError('Erreur de chargement du signalement')
     } finally {
@@ -78,7 +80,8 @@ export default function SignalementDetails() {
       await signalementService.updateDetails(id, {
         surface_m2: surfaceM2 ? parseFloat(surfaceM2) : null,
         budget: budget ? parseFloat(budget) : null,
-        entreprise_id: entrepriseId || null
+        entreprise_id: entrepriseId || null,
+        repair_category: repairCategory ? parseInt(repairCategory) : null
       })
       setSuccess('Détails mis à jour avec succès')
       loadSignalement()
@@ -211,6 +214,10 @@ export default function SignalementDetails() {
               <span className="label">Entreprise:</span>
               <span>{signalement.entreprise?.nom || 'Non renseigné'}</span>
             </div>
+            <div className="info-row">
+              <span className="label">Catégorie de réparation:</span>
+              <span>{signalement.repair_category ? `${signalement.repair_category}/10` : 'Non renseigné'}</span>
+            </div>
           </div>
         </div>
 
@@ -279,6 +286,25 @@ export default function SignalementDetails() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Catégorie de réparation (1-10)</label>
+                  <div className="radio-group">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <label key={num} className="radio-label">
+                        <input
+                          type="radio"
+                          name="repair_category"
+                          value={num}
+                          checked={repairCategory === num.toString()}
+                          onChange={(e) => setRepairCategory(e.target.value)}
+                          disabled={updating}
+                        />
+                        <span>{num}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <button type="submit" disabled={updating} className="btn-submit">

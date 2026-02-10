@@ -83,6 +83,7 @@ class SignalementController extends Controller
             'surface_m2' => 'nullable|numeric|min:0',
             'budget' => 'nullable|numeric|min:0',
             'entreprise_id' => 'nullable|exists:entreprises,id',
+            'repair_category' => 'nullable|integer|min:1|max:10',
         ]);
 
         if ($validator->fails()) {
@@ -90,7 +91,7 @@ class SignalementController extends Controller
         }
 
         $signalement = Signalement::findOrFail($id);
-        $signalement->update($request->only(['surface_m2', 'budget', 'entreprise_id']));
+        $signalement->update($request->only(['surface_m2', 'budget', 'entreprise_id', 'repair_category']));
 
         return response()->json($signalement->load('entreprise'));
     }
